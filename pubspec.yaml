@@ -1,7 +1,6 @@
 name: appcraft_utils_flutter
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+version: 0.0.1
+repository: https://github.com/AppCraftTeam/appcraft-utils-flutter
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
