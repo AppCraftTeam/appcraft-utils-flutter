@@ -2,7 +2,7 @@
 
 [![version](https://img.shields.io/badge/version-0.0.1-white.svg)](https://semver.org)
 
-Набор вспомогательных утилит для Flutter-приложений: обработка ошибок, валидация форм, immutable-модели, работа со списками и другое.
+Набор вспомогательных утилит для Flutter-приложений: обработка ошибок, валидация форм, модели, работа со списками и другое.
 
 ## Installation
 
@@ -15,5 +15,6 @@ dependencies:
 ```
 
 ```bash
+#!/bin/bash
 flutter pub get
 ```
