@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_dispatcher.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_params.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_parser.dart';
@@ -13,7 +14,6 @@ import 'helpers/fake_loader.dart';
 final class _TestParams with ACListLoadingParamsMixin {
   // `limit` is accepted for API symmetry with the public contract even
   // though none of the search tests currently pass it.
-  // ignore: unused_element_parameter
   const _TestParams({this.limit, this.offset, this.query});
 
   @override

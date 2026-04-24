@@ -1,3 +1,4 @@
+// ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors
 import 'dart:async';
 
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_dispatcher.dart';

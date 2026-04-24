@@ -1,5 +1,6 @@
 name: appcraft_utils_flutter
-version: 0.0.3
+description: Набор утилит и расширений для Flutter/Dart-проектов команды AppCraft — исключения, расширения, инпуты, локализация, мапперы, модели, нотификаторы и диспатчер загрузки списков.
+version: 0.1.0
 repository: https://github.com/AppCraftTeam/appcraft-utils-flutter
 
 environment:

@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_const_constructors
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_search_strategy.dart';
 import 'package:test/test.dart';
 
