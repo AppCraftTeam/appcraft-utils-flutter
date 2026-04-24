@@ -40,9 +40,24 @@ final class ACListLoadingDispatcher<T, R> {
   /// [searchStrategy] настраивает поисковое поведение (debounce + minLength);
   /// по умолчанию используется `const ACSearchStrategy()` — 300мс задержки,
   /// минимум 3 символа.
+  ///
+  /// [defaultCancelStrategy] — стратегия отмены по умолчанию для [reload] и
+  /// [loadMore]. Применяется приоритет: `cancelStrategy` из аргументов метода
+  /// перекрывает [defaultCancelStrategy]; если оба `null` — на каждую
+  /// загрузку создаётся новый [ACOperationCancelStrategy].
+  ///
+  /// Если задан [defaultCancelStrategy] — **один и тот же экземпляр**
+  /// используется между вызовами [reload]/[loadMore]. Это означает, что при
+  /// старте новой загрузки на нём вызывается `cancel()` (отмена предыдущей),
+  /// а затем `run()` — повторно. Реализация должна корректно выдерживать
+  /// многократные вызовы `run` (по data-model §7 штатный
+  /// [ACOperationCancelStrategy] это поддерживает, так как каждый `run`
+  /// создаёт новую `CancelableOperation` внутри). Пользовательские
+  /// реализации должны быть готовы к повторным `run` на том же инстансе.
   ACListLoadingDispatcher({
     required this.parser,
     ACSearchStrategy? searchStrategy,
+    this.defaultCancelStrategy,
   }) : searchStrategy = searchStrategy ?? ACSearchStrategy() {
     _emit();
   }
@@ -57,6 +72,19 @@ final class ACListLoadingDispatcher<T, R> {
   /// Задаётся один раз при создании диспатчера. Управляет debounce-ом и
   /// минимальной длиной query в [reload].
   final ACSearchStrategy searchStrategy;
+
+  /// Стратегия отмены по умолчанию для [reload] и [loadMore].
+  ///
+  /// Приоритет выбора стратегии при старте загрузки:
+  /// 1. `cancelStrategy`, переданный в [reload]/[loadMore] аргументом;
+  /// 2. [defaultCancelStrategy];
+  /// 3. новый экземпляр [ACOperationCancelStrategy] на каждую загрузку.
+  ///
+  /// Если [defaultCancelStrategy] задан — один и тот же экземпляр
+  /// переиспользуется между вызовами, поэтому его реализация должна
+  /// выдерживать многократные вызовы `run` (штатный
+  /// [ACOperationCancelStrategy] это гарантирует).
+  final ACCancelStrategy? defaultCancelStrategy;
 
   final List<T> _items = <T>[];
   bool _isLoading = false;
@@ -125,9 +153,17 @@ final class ACListLoadingDispatcher<T, R> {
   ///
   /// Результат, пришедший после [dispose] или после того, как успели
   /// запустить более новый [reload], игнорируется.
+  ///
+  /// [cancelStrategy] — опциональная стратегия отмены именно для этой
+  /// загрузки. Приоритет: аргумент → [defaultCancelStrategy] → новый
+  /// [ACOperationCancelStrategy] на каждый вызов. В ветке отказа по
+  /// minLength [cancelStrategy] не используется: загрузка не стартует.
+  /// В debounce-ветке параметр захватывается замыканием и применяется
+  /// при срабатывании таймера.
   Future<void> reload<P extends ACListLoadingParamsMixin>({
     required P params,
     required Future<R> Function(P params) load,
+    ACCancelStrategy? cancelStrategy,
   }) async {
     if (_disposed) return;
 
@@ -144,6 +180,7 @@ final class ACListLoadingDispatcher<T, R> {
         params: params,
         load: load,
         replace: true,
+        cancelStrategy: cancelStrategy,
       );
       return;
     }
@@ -173,6 +210,7 @@ final class ACListLoadingDispatcher<T, R> {
         params: params,
         load: load,
         replace: true,
+        cancelStrategy: cancelStrategy,
       );
       return;
     }
@@ -185,11 +223,15 @@ final class ACListLoadingDispatcher<T, R> {
         params: params,
         load: load,
         replace: true,
+        cancelStrategy: cancelStrategy,
       );
       return;
     }
 
     // Иначе — планируем отложенную загрузку через Timer.
+    // cancelStrategy захватывается замыканием и применится, когда таймер
+    // сработает.
+    final capturedStrategy = cancelStrategy;
     _debounceTimer = Timer(searchStrategy.debounce, () {
       _debounceTimer = null;
       if (_disposed) return;
@@ -200,6 +242,7 @@ final class ACListLoadingDispatcher<T, R> {
         params: params,
         load: load,
         replace: true,
+        cancelStrategy: capturedStrategy,
       );
     });
   }
@@ -217,9 +260,14 @@ final class ACListLoadingDispatcher<T, R> {
   ///
   /// Элементы из [ACParseResult.items] **добавляются** в конец
   /// существующего списка; [hasMore] обновляется по результату [parser].
+  ///
+  /// [cancelStrategy] — опциональная стратегия отмены именно для этой
+  /// загрузки. Приоритет: аргумент → [defaultCancelStrategy] → новый
+  /// [ACOperationCancelStrategy] на каждый вызов.
   Future<void> loadMore<P extends ACListLoadingParamsMixin>({
     required P params,
     required Future<R> Function(P params) load,
+    ACCancelStrategy? cancelStrategy,
   }) async {
     if (_disposed) return;
     if (_isLoading) return;
@@ -229,6 +277,7 @@ final class ACListLoadingDispatcher<T, R> {
       params: params,
       load: load,
       replace: false,
+      cancelStrategy: cancelStrategy,
     );
   }
 
@@ -281,15 +330,23 @@ final class ACListLoadingDispatcher<T, R> {
   ///
   /// При `replace == true` накопленные элементы заменяются результатом
   /// парсера; при `replace == false` — добавляются в конец (loadMore).
+  ///
+  /// [cancelStrategy] выбирается по приоритету: аргумент →
+  /// [defaultCancelStrategy] → новый [ACOperationCancelStrategy]. Выбранный
+  /// экземпляр сохраняется в `_activeCancel`, чтобы следующий [reload] мог
+  /// его отменить.
   Future<void> _runLoad<P extends ACListLoadingParamsMixin>({
     required P params,
     required Future<R> Function(P params) load,
     required bool replace,
+    ACCancelStrategy? cancelStrategy,
   }) async {
     if (_disposed) return;
 
     final previousCancel = _activeCancel;
-    final capturedCancel = ACOperationCancelStrategy();
+    final capturedCancel = cancelStrategy
+        ?? defaultCancelStrategy
+        ?? ACOperationCancelStrategy();
     _activeCancel = capturedCancel;
     _isLoading = true;
     _error = null;
