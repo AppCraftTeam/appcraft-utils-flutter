@@ -1,16 +1,15 @@
 // ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_dispatcher.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_params.dart';
-import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_result.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_search_strategy.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/fake_loader.dart';
 
-/// Minimal implementation of [ACListLoadingParamsMixin] used only in search
-/// tests.
-final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
+/// Offset-based params used with [ACDefaultListLoadingDispatcher].
+final class _TestParams
+    with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
   const _TestParams({this.limit, this.offset, this.query});
 
   @override
@@ -21,20 +20,10 @@ final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParams
   final String? query;
 }
 
-/// DTO that mixes in [ACListLoadingResult] — consumer pattern.
-final class _TestPage<T> with ACListLoadingResult<T> {
-  const _TestPage(this.items, {this.hasMore = true});
-
-  @override
-  final List<T> items;
-  @override
-  final bool hasMore;
-}
-
-ACListLoadingDispatcher<int> _buildDispatcher({
+ACDefaultListLoadingDispatcher<_TestParams, int> _buildDispatcher({
   ACSearchStrategy? searchStrategy,
 }) =>
-    ACListLoadingDispatcher<int>(
+    ACDefaultListLoadingDispatcher<_TestParams, int>(
       searchStrategy: searchStrategy,
     );
 
@@ -44,12 +33,12 @@ void main() {
       FakeAsync().run((async) {
         // Arrange
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[1, 2, 3]);
 
         // Act — fire-and-forget; FakeAsync runs the future synchronously.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(),
               load: loader.call,
             )
@@ -70,12 +59,12 @@ void main() {
       FakeAsync().run((async) {
         // Arrange
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[10, 20], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[10, 20]);
 
         // Act
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: ''),
               load: loader.call,
             )
@@ -90,15 +79,16 @@ void main() {
       });
     });
 
-    test('query.length < minLength: items cleared, hasMore=false, loader NOT '
+    test(
+        'query.length < minLength: items cleared, hasMore=false, loader NOT '
         'called', () {
       FakeAsync().run((async) {
         // Arrange — seed items so we can observe clearing.
         final dispatcher = _buildDispatcher();
-        final seedLoader = FakeLoader<ACListLoadingResult<int>>();
-        seedLoader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
+        final seedLoader = FakeLoader<List<int>>();
+        seedLoader.enqueueValue(<int>[1, 2, 3]);
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(),
               load: seedLoader.call,
             )
@@ -107,9 +97,9 @@ void main() {
         expect(dispatcher.items, equals(<int>[1, 2, 3]));
 
         // Act — reload with a too-short query.
-        final searchLoader = FakeLoader<ACListLoadingResult<int>>();
+        final searchLoader = FakeLoader<List<int>>();
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'ab'),
               load: searchLoader.call,
             )
@@ -129,16 +119,17 @@ void main() {
       });
     });
 
-    test('changed query with length >= minLength: debounce delays the load', () {
+    test('changed query with length >= minLength: debounce delays the load',
+        () {
       FakeAsync().run((async) {
         // Arrange
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[100, 200, 300], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[100, 200, 300]);
 
         // Act — schedule a search; nothing should run before debounce.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -164,17 +155,18 @@ void main() {
       });
     });
 
-    test('two successive reloads within debounce window: first timer is '
+    test(
+        'two successive reloads within debounce window: first timer is '
         'cancelled, second query wins', () {
       FakeAsync().run((async) {
         // Arrange
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[7, 8], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[7, 8]);
 
         // Act — first reload starts the debounce timer.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'joh'),
               load: loader.call,
             )
@@ -183,7 +175,7 @@ void main() {
 
         // Second reload with a different query, still within debounce window.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -210,16 +202,17 @@ void main() {
       });
     });
 
-    test('repeated reload with same query after it was applied: load starts '
+    test(
+        'repeated reload with same query after it was applied: load starts '
         'immediately (no debounce)', () {
       FakeAsync().run((async) {
         // Arrange — first, apply the query normally through debounce.
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-        loader.enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[1, 2]);
+        loader.enqueueValue(<int>[3, 4]);
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -230,7 +223,7 @@ void main() {
 
         // Act — repeat the same query.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -246,17 +239,18 @@ void main() {
       });
     });
 
-    test('reload(query: null) after a search resets internal state; the '
+    test(
+        'reload(query: null) after a search resets internal state; the '
         'next search of the previous query is debounced again', () {
       FakeAsync().run((async) {
         // Arrange — apply 'john' first.
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-        loader.enqueueValue(_TestPage<int>(<int>[5, 6], hasMore: true));
-        loader.enqueueValue(_TestPage<int>(<int>[7, 8], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[1, 2]);
+        loader.enqueueValue(<int>[5, 6]);
+        loader.enqueueValue(<int>[7, 8]);
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -267,7 +261,7 @@ void main() {
 
         // Act 1 — reload with null query resets immediately.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(),
               load: loader.call,
             )
@@ -278,7 +272,7 @@ void main() {
 
         // Act 2 — searching for 'john' again must be debounced.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -299,17 +293,18 @@ void main() {
       });
     });
 
-    test('dispose during a pending debounce cancels the timer; loader does '
+    test(
+        'dispose during a pending debounce cancels the timer; loader does '
         'not fire after elapse', () {
       FakeAsync().run((async) {
         // Arrange
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>();
-        loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
+        final loader = FakeLoader<List<int>>();
+        loader.enqueueValue(<int>[1, 2]);
 
         // Act — start a search; before debounce fires, dispose.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'alex'),
               load: loader.call,
             )
@@ -330,16 +325,18 @@ void main() {
   });
 
   group('ACListLoadingDispatcher — loadMore search semantics (US2)', () {
-    test('loadMore with any query does NOT apply debounce: loader runs '
+    test(
+        'loadMore with any query does NOT apply debounce: loader runs '
         'immediately', () {
       FakeAsync().run((async) {
-        // Arrange — seed items with a normal reload first (hasMore=true).
+        // Arrange — seed items with a normal reload first (hasMore=true via
+        // null limit).
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>()
-          ..enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true))
-          ..enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
+        final loader = FakeLoader<List<int>>()
+          ..enqueueValue(<int>[1, 2])
+          ..enqueueValue(<int>[3, 4]);
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(),
               load: loader.call,
             )
@@ -350,7 +347,7 @@ void main() {
 
         // Act — loadMore with a query, without advancing fake time.
         dispatcher
-            .loadMore<_TestParams>(
+            .loadMore(
               params: const _TestParams(offset: 2, query: 'abc'),
               load: loader.call,
             )
@@ -366,16 +363,17 @@ void main() {
       });
     });
 
-    test('loadMore with query shorter than minLength: minLength check does '
+    test(
+        'loadMore with query shorter than minLength: minLength check does '
         'NOT apply; loader fires normally', () {
       FakeAsync().run((async) {
         // Arrange
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>()
-          ..enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true))
-          ..enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
+        final loader = FakeLoader<List<int>>()
+          ..enqueueValue(<int>[1, 2])
+          ..enqueueValue(<int>[3, 4]);
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(),
               load: loader.call,
             )
@@ -385,7 +383,7 @@ void main() {
 
         // Act — loadMore with a 2-char query (minLength default = 3).
         dispatcher
-            .loadMore<_TestParams>(
+            .loadMore(
               params: const _TestParams(offset: 2, query: 'ab'),
               load: loader.call,
             )
@@ -401,17 +399,18 @@ void main() {
       });
     });
 
-    test('loadMore does NOT mutate last-applied query: subsequent reload '
+    test(
+        'loadMore does NOT mutate last-applied query: subsequent reload '
         'with the original query still skips debounce', () {
       FakeAsync().run((async) {
         // Arrange — apply 'john' through debounce.
         final dispatcher = _buildDispatcher();
-        final loader = FakeLoader<ACListLoadingResult<int>>()
-          ..enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true))
-          ..enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true))
-          ..enqueueValue(_TestPage<int>(<int>[5, 6], hasMore: true));
+        final loader = FakeLoader<List<int>>()
+          ..enqueueValue(<int>[1, 2])
+          ..enqueueValue(<int>[3, 4])
+          ..enqueueValue(<int>[5, 6]);
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )
@@ -423,7 +422,7 @@ void main() {
         // Act 1 — loadMore with a DIFFERENT query; must not change
         // last-applied inside the search strategy.
         dispatcher
-            .loadMore<_TestParams>(
+            .loadMore(
               params: const _TestParams(offset: 2, query: 'different'),
               load: loader.call,
             )
@@ -435,7 +434,7 @@ void main() {
         // last-applied to 'different', this reload would be debounced.
         // It must NOT be.
         dispatcher
-            .reload<_TestParams>(
+            .reload(
               params: const _TestParams(query: 'john'),
               load: loader.call,
             )

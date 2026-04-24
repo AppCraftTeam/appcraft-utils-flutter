@@ -4,13 +4,13 @@ import 'dart:async';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_cancel_strategy.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_dispatcher.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_params.dart';
-import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_result.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/fake_loader.dart';
 
-/// Minimal implementation of [ACListLoadingParamsMixin] used only in tests.
-final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
+/// Offset-based params used with [ACDefaultListLoadingDispatcher].
+final class _TestParams
+    with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
   const _TestParams({this.limit, this.offset, this.query});
 
   @override
@@ -19,16 +19,6 @@ final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParams
   final int? offset;
   @override
   final String? query;
-}
-
-/// DTO that mixes in [ACListLoadingResult].
-final class _TestPage<T> with ACListLoadingResult<T> {
-  const _TestPage(this.items, {this.hasMore = true});
-
-  @override
-  final List<T> items;
-  @override
-  final bool hasMore;
 }
 
 /// Spy [ACCancelStrategy] used to verify which strategy the dispatcher picks
@@ -61,8 +51,8 @@ final class _SpyCancelStrategy implements ACCancelStrategy {
   bool get isActive => _inner.isActive;
 }
 
-ACListLoadingDispatcher<int> _buildDispatcher() =>
-    ACListLoadingDispatcher<int>();
+ACDefaultListLoadingDispatcher<_TestParams, int> _buildDispatcher() =>
+    ACDefaultListLoadingDispatcher<_TestParams, int>();
 
 void main() {
   group('ACListLoadingDispatcher — cancel strategy (US3, post-T047)', () {
@@ -71,11 +61,11 @@ void main() {
       // Arrange
       final dispatcher = _buildDispatcher();
       final spy = _SpyCancelStrategy();
-      final loader = FakeLoader<ACListLoadingResult<int>>();
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
+      final loader = FakeLoader<List<int>>();
+      loader.enqueueValue(<int>[1, 2, 3]);
 
       // Act
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
         cancelStrategy: spy,
@@ -95,20 +85,20 @@ void main() {
         () async {
       // Arrange — seed the dispatcher so hasMore stays true.
       final dispatcher = _buildDispatcher();
-      final seedLoader = FakeLoader<ACListLoadingResult<int>>();
-      seedLoader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      final seedLoader = FakeLoader<List<int>>();
+      seedLoader.enqueueValue(<int>[1, 2]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: seedLoader.call,
       );
       expect(dispatcher.hasMore, isTrue);
 
       final spy = _SpyCancelStrategy();
-      final loadMoreLoader = FakeLoader<ACListLoadingResult<int>>();
-      loadMoreLoader.enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
+      final loadMoreLoader = FakeLoader<List<int>>();
+      loadMoreLoader.enqueueValue(<int>[3, 4]);
 
       // Act
-      await dispatcher.loadMore<_TestParams>(
+      await dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: loadMoreLoader.call,
         cancelStrategy: spy,
@@ -123,34 +113,34 @@ void main() {
       dispatcher.dispose();
     });
 
-    test('reload with override while another override-reload is in flight '
+    test(
+        'reload with override while another override-reload is in flight '
         'cancels the previous override and runs the new one', () async {
       // Arrange
       final dispatcher = _buildDispatcher();
       final firstSpy = _SpyCancelStrategy();
       final secondSpy = _SpyCancelStrategy();
 
-      final firstGate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> firstLoad(_TestParams _) =>
-          firstGate.future;
-      final secondLoader = FakeLoader<ACListLoadingResult<int>>();
-      secondLoader.enqueueValue(_TestPage<int>(<int>[9, 8, 7], hasMore: true));
+      final firstGate = Completer<List<int>>();
+      Future<List<int>> firstLoad(_TestParams _) => firstGate.future;
+      final secondLoader = FakeLoader<List<int>>();
+      secondLoader.enqueueValue(<int>[9, 8, 7]);
 
       // Act — start a slow reload with the first override, then kick off a
       // second reload with a different override while the first is pending.
-      final firstFuture = dispatcher.reload<_TestParams>(
+      final firstFuture = dispatcher.reload(
         params: const _TestParams(),
         load: firstLoad,
         cancelStrategy: firstSpy,
       );
-      final secondFuture = dispatcher.reload<_TestParams>(
+      final secondFuture = dispatcher.reload(
         params: const _TestParams(),
         load: secondLoader.call,
         cancelStrategy: secondSpy,
       );
       // Release the first loader so its Future can resolve; its result must
       // be discarded because the strategy was cancelled.
-      firstGate.complete(_TestPage<int>(<int>[1, 1, 1], hasMore: true));
+      firstGate.complete(<int>[1, 1, 1]);
       await Future.wait(<Future<void>>[firstFuture, secondFuture]);
 
       // Assert
@@ -167,27 +157,27 @@ void main() {
       dispatcher.dispose();
     });
 
-    test('consecutive reloads without override: each call uses a fresh '
+    test(
+        'consecutive reloads without override: each call uses a fresh '
         'strategy; second cancels the first', () async {
       // Arrange — no default, no override. Dispatcher must internally spin
       // up a new ACOperationCancelStrategy per call.
       final dispatcher = _buildDispatcher();
-      final firstGate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> firstLoad(_TestParams _) =>
-          firstGate.future;
-      final secondLoader = FakeLoader<ACListLoadingResult<int>>();
-      secondLoader.enqueueValue(_TestPage<int>(<int>[5, 6], hasMore: true));
+      final firstGate = Completer<List<int>>();
+      Future<List<int>> firstLoad(_TestParams _) => firstGate.future;
+      final secondLoader = FakeLoader<List<int>>();
+      secondLoader.enqueueValue(<int>[5, 6]);
 
       // Act — two back-to-back reloads; the first one blocks on a completer.
-      final firstFuture = dispatcher.reload<_TestParams>(
+      final firstFuture = dispatcher.reload(
         params: const _TestParams(),
         load: firstLoad,
       );
-      final secondFuture = dispatcher.reload<_TestParams>(
+      final secondFuture = dispatcher.reload(
         params: const _TestParams(),
         load: secondLoader.call,
       );
-      firstGate.complete(_TestPage<int>(<int>[1, 1, 1], hasMore: true));
+      firstGate.complete(<int>[1, 1, 1]);
       await Future.wait(<Future<void>>[firstFuture, secondFuture]);
 
       // Assert — only the second result lands, confirming the first was
@@ -198,22 +188,23 @@ void main() {
       dispatcher.dispose();
     });
 
-    test('per-call override on first reload does NOT leak into the second '
+    test(
+        'per-call override on first reload does NOT leak into the second '
         'reload (no shared state between calls)', () async {
       // Arrange
       final dispatcher = _buildDispatcher();
       final firstSpy = _SpyCancelStrategy();
-      final loader = FakeLoader<ACListLoadingResult<int>>()
-        ..enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true))
-        ..enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
+      final loader = FakeLoader<List<int>>()
+        ..enqueueValue(<int>[1, 2])
+        ..enqueueValue(<int>[3, 4]);
 
       // Act — first reload with override; second reload without.
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
         cancelStrategy: firstSpy,
       );
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );

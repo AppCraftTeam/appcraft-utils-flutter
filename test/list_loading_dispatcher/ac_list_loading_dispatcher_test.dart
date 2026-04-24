@@ -9,11 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/fake_loader.dart';
 
-/// Minimal implementation of [ACListLoadingParamsMixin] used only in tests.
-///
-/// The dispatcher reads only [query]; [limit] and [offset] are carried along
-/// for symmetry with the public contract.
-final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
+/// Offset-based params — used by the `ACDefaultListLoadingDispatcher` where
+/// the loader returns a bare `List<T>` and `hasMore` is computed from
+/// `params.limit`.
+final class _TestParams
+    with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
   const _TestParams({this.limit, this.offset, this.query});
 
   @override
@@ -24,8 +24,8 @@ final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParams
   final String? query;
 }
 
-/// Cursor-based params used to verify the dispatcher accepts any subtype of
-/// [ACListLoadingParamsMixin] — here specifically [ACCursorListLoadingParamsMixin].
+/// Cursor-based params — used by the `ACCustomListLoadingDispatcher` where
+/// the loader returns a DTO that mixes [ACListLoadingResult].
 final class _TestCursorParams
     with ACListLoadingParamsMixin, ACCursorListLoadingParamsMixin {
   const _TestCursorParams({this.limit, this.cursor, this.query});
@@ -38,8 +38,8 @@ final class _TestCursorParams
   final String? query;
 }
 
-/// Minimal [ACListLoadingResult] implementation — mirrors what consumers will
-/// mix into their own response DTOs.
+/// DTO that mixes [ACListLoadingResult] — mirrors the consumer pattern for
+/// custom-response flows (`ACCustomListLoadingDispatcher`).
 final class _TestPage<T> with ACListLoadingResult<T> {
   const _TestPage(this.items, {this.hasMore = true});
 
@@ -49,17 +49,17 @@ final class _TestPage<T> with ACListLoadingResult<T> {
   final bool hasMore;
 }
 
-ACListLoadingDispatcher<int> _buildDispatcher() =>
-    ACListLoadingDispatcher<int>();
+ACDefaultListLoadingDispatcher<_TestParams, int> _buildDispatcher() =>
+    ACDefaultListLoadingDispatcher<_TestParams, int>();
 
 void main() {
   group('ACListLoadingDispatcher — basic pagination (US1)', () {
-    late ACListLoadingDispatcher<int> dispatcher;
-    late FakeLoader<ACListLoadingResult<int>> loader;
+    late ACDefaultListLoadingDispatcher<_TestParams, int> dispatcher;
+    late FakeLoader<List<int>> loader;
 
     setUp(() {
       dispatcher = _buildDispatcher();
-      loader = FakeLoader<ACListLoadingResult<int>>();
+      loader = FakeLoader<List<int>>();
     });
 
     tearDown(() {
@@ -90,11 +90,11 @@ void main() {
     });
 
     test('reload success replaces items and updates hasMore', () async {
-      // Arrange
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
+      // Arrange — limit=null in params -> parser reports hasMore=true.
+      loader.enqueueValue(<int>[1, 2, 3]);
 
       // Act
-      final future = dispatcher.reload<_TestParams>(
+      final future = dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
@@ -109,14 +109,14 @@ void main() {
       expect(loader.callCount, 1);
     });
 
-    test('reload with hasMore=false in response propagates into getter',
+    test('reload with short page relative to limit propagates hasMore=false',
         () async {
-      // Arrange
-      loader.enqueueValue(_TestPage<int>(<int>[42], hasMore: false));
+      // Arrange — limit=3, but loader returns only 1 element -> hasMore=false.
+      loader.enqueueValue(<int>[42]);
 
       // Act
-      await dispatcher.reload<_TestParams>(
-        params: const _TestParams(),
+      await dispatcher.reload(
+        params: const _TestParams(limit: 3),
         load: loader.call,
       );
 
@@ -128,15 +128,15 @@ void main() {
     test('loadMore success appends items at the end and updates hasMore',
         () async {
       // Arrange — first reload seeds the list, then loadMore extends it.
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      loader.enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      loader.enqueueValue(<int>[1, 2]);
+      loader.enqueueValue(<int>[3, 4]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
 
       // Act
-      await dispatcher.loadMore<_TestParams>(
+      await dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: loader.call,
       );
@@ -147,19 +147,18 @@ void main() {
       expect(loader.callCount, 2);
     });
 
-    test('loadMore with hasMore=false from loader appends and flips hasMore',
-        () async {
-      // Arrange
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      loader.enqueueValue(_TestPage<int>(<int>[3], hasMore: false));
-      await dispatcher.reload<_TestParams>(
-        params: const _TestParams(),
+    test('loadMore with short page flips hasMore to false', () async {
+      // Arrange — limit=2 consistently; last page is a single element.
+      loader.enqueueValue(<int>[1, 2]);
+      loader.enqueueValue(<int>[3]);
+      await dispatcher.reload(
+        params: const _TestParams(limit: 2),
         load: loader.call,
       );
 
       // Act
-      await dispatcher.loadMore<_TestParams>(
-        params: const _TestParams(offset: 2),
+      await dispatcher.loadMore(
+        params: const _TestParams(limit: 2, offset: 2),
         load: loader.call,
       );
 
@@ -170,10 +169,10 @@ void main() {
 
     test('loadMore is a no-op when hasMore=false — loader is not invoked',
         () async {
-      // Arrange — seed hasMore=false.
-      loader.enqueueValue(_TestPage<int>(<int>[1], hasMore: false));
-      await dispatcher.reload<_TestParams>(
-        params: const _TestParams(),
+      // Arrange — seed hasMore=false (page shorter than limit).
+      loader.enqueueValue(<int>[1]);
+      await dispatcher.reload(
+        params: const _TestParams(limit: 3),
         load: loader.call,
       );
       final callsBefore = loader.callCount;
@@ -181,8 +180,8 @@ void main() {
       expect(dispatcher.hasMore, isFalse);
 
       // Act
-      await dispatcher.loadMore<_TestParams>(
-        params: const _TestParams(offset: 1),
+      await dispatcher.loadMore(
+        params: const _TestParams(limit: 3, offset: 1),
         load: loader.call,
       );
 
@@ -195,31 +194,31 @@ void main() {
 
     test('loadMore while another load is already in flight is a no-op',
         () async {
-      // Arrange — seed items + hasMore=true.
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      // Arrange — seed items + hasMore=true (no limit -> always more).
+      loader.enqueueValue(<int>[1, 2]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
       // The first loadMore will block on a gate.
-      final gate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> slowLoad(_TestParams _) => gate.future;
-      final secondLoader = FakeLoader<ACListLoadingResult<int>>();
-      secondLoader.enqueueValue(_TestPage<int>(<int>[9, 9], hasMore: true));
+      final gate = Completer<List<int>>();
+      Future<List<int>> slowLoad(_TestParams _) => gate.future;
+      final secondLoader = FakeLoader<List<int>>();
+      secondLoader.enqueueValue(<int>[9, 9]);
 
       // Act — start one loadMore, then try a second concurrently.
-      final firstFuture = dispatcher.loadMore<_TestParams>(
+      final firstFuture = dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: slowLoad,
       );
       expect(dispatcher.isLoading, isTrue);
-      await dispatcher.loadMore<_TestParams>(
+      await dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: secondLoader.call,
       );
 
       // Release the first loadMore.
-      gate.complete(_TestPage<int>(<int>[3, 4], hasMore: true));
+      gate.complete(<int>[3, 4]);
       await firstFuture;
 
       // Assert
@@ -228,27 +227,27 @@ void main() {
       expect(dispatcher.items, equals(<int>[1, 2, 3, 4]));
     });
 
-    test('reload cancels a prior in-flight reload: only the second result '
+    test(
+        'reload cancels a prior in-flight reload: only the second result '
         'lands in items', () async {
       // Arrange — the first loader blocks on a completer; its result must be
       // discarded in favour of the second reload.
-      final firstGate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> firstLoad(_TestParams _) =>
-          firstGate.future;
-      final secondLoader = FakeLoader<ACListLoadingResult<int>>();
-      secondLoader.enqueueValue(_TestPage<int>(<int>[9, 8, 7], hasMore: true));
+      final firstGate = Completer<List<int>>();
+      Future<List<int>> firstLoad(_TestParams _) => firstGate.future;
+      final secondLoader = FakeLoader<List<int>>();
+      secondLoader.enqueueValue(<int>[9, 8, 7]);
 
       // Act
-      final firstFuture = dispatcher.reload<_TestParams>(
+      final firstFuture = dispatcher.reload(
         params: const _TestParams(),
         load: firstLoad,
       );
-      final secondFuture = dispatcher.reload<_TestParams>(
+      final secondFuture = dispatcher.reload(
         params: const _TestParams(),
         load: secondLoader.call,
       );
       // Let the first loader finally resolve — result must be ignored.
-      firstGate.complete(_TestPage<int>(<int>[1, 1, 1], hasMore: true));
+      firstGate.complete(<int>[1, 1, 1]);
       await Future.wait(<Future<void>>[firstFuture, secondFuture]);
 
       // Assert
@@ -259,31 +258,28 @@ void main() {
     test('reload cancels an in-flight loadMore: only reload result stands',
         () async {
       // Arrange — seed non-empty items.
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      loader.enqueueValue(<int>[1, 2]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
       // Start a slow loadMore.
-      final loadMoreGate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> slowLoadMore(_TestParams _) =>
-          loadMoreGate.future;
+      final loadMoreGate = Completer<List<int>>();
+      Future<List<int>> slowLoadMore(_TestParams _) => loadMoreGate.future;
       // The reload that should win.
-      final reloadLoader = FakeLoader<ACListLoadingResult<int>>();
-      reloadLoader.enqueueValue(
-        _TestPage<int>(<int>[100, 200], hasMore: true),
-      );
+      final reloadLoader = FakeLoader<List<int>>();
+      reloadLoader.enqueueValue(<int>[100, 200]);
 
       // Act
-      final loadMoreFuture = dispatcher.loadMore<_TestParams>(
+      final loadMoreFuture = dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: slowLoadMore,
       );
-      final reloadFuture = dispatcher.reload<_TestParams>(
+      final reloadFuture = dispatcher.reload(
         params: const _TestParams(),
         load: reloadLoader.call,
       );
-      loadMoreGate.complete(_TestPage<int>(<int>[3, 4], hasMore: true));
+      loadMoreGate.complete(<int>[3, 4]);
       await Future.wait(<Future<void>>[loadMoreFuture, reloadFuture]);
 
       // Assert — reload replaces items; loadMore result is discarded.
@@ -293,12 +289,12 @@ void main() {
   });
 
   group('ACListLoadingDispatcher — errors (US1)', () {
-    late ACListLoadingDispatcher<int> dispatcher;
-    late FakeLoader<ACListLoadingResult<int>> loader;
+    late ACDefaultListLoadingDispatcher<_TestParams, int> dispatcher;
+    late FakeLoader<List<int>> loader;
 
     setUp(() {
       dispatcher = _buildDispatcher();
-      loader = FakeLoader<ACListLoadingResult<int>>();
+      loader = FakeLoader<List<int>>();
     });
 
     tearDown(() {
@@ -313,7 +309,7 @@ void main() {
 
       // Act & Assert — reload must propagate the error to the caller.
       await expectLater(
-        dispatcher.reload<_TestParams>(
+        dispatcher.reload(
           params: const _TestParams(),
           load: loader.call,
         ),
@@ -330,8 +326,8 @@ void main() {
     test('reload error on a populated list preserves previous items',
         () async {
       // Arrange — first successful reload seeds items.
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      loader.enqueueValue(<int>[1, 2, 3]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
@@ -341,7 +337,7 @@ void main() {
 
       // Act & Assert — reload throws.
       await expectLater(
-        dispatcher.reload<_TestParams>(
+        dispatcher.reload(
           params: const _TestParams(),
           load: loader.call,
         ),
@@ -359,7 +355,7 @@ void main() {
       final failure = Exception('first fail');
       loader.enqueueError(failure);
       await expectLater(
-        dispatcher.reload<_TestParams>(
+        dispatcher.reload(
           params: const _TestParams(),
           load: loader.call,
         ),
@@ -367,10 +363,10 @@ void main() {
       );
 
       // Then succeed.
-      loader.enqueueValue(_TestPage<int>(<int>[7, 8, 9], hasMore: true));
+      loader.enqueueValue(<int>[7, 8, 9]);
 
       // Act
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
@@ -382,9 +378,9 @@ void main() {
 
     test('loadMore rethrows; previous items and hasMore are preserved',
         () async {
-      // Arrange — seed a two-item list (hasMore=true).
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      // Arrange — seed a two-item list (hasMore=true via null limit).
+      loader.enqueueValue(<int>[1, 2]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
@@ -396,7 +392,7 @@ void main() {
 
       // Act & Assert
       await expectLater(
-        dispatcher.loadMore<_TestParams>(
+        dispatcher.loadMore(
           params: const _TestParams(offset: 2),
           load: loader.call,
         ),
@@ -411,14 +407,14 @@ void main() {
   });
 
   group('ACListLoadingDispatcher — notify semantics (US1 + T049)', () {
-    late ACListLoadingDispatcher<int> dispatcher;
-    late FakeLoader<ACListLoadingResult<int>> loader;
+    late ACDefaultListLoadingDispatcher<_TestParams, int> dispatcher;
+    late FakeLoader<List<int>> loader;
     late int notifyCount;
     late VoidCallback listener;
 
     setUp(() {
       dispatcher = _buildDispatcher();
-      loader = FakeLoader<ACListLoadingResult<int>>();
+      loader = FakeLoader<List<int>>();
       notifyCount = 0;
       listener = () => notifyCount++;
       dispatcher.addListener(listener);
@@ -430,10 +426,10 @@ void main() {
 
     test('successful reload triggers exactly one notifyListeners', () async {
       // Arrange
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
+      loader.enqueueValue(<int>[1, 2, 3]);
 
       // Act
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
@@ -446,16 +442,16 @@ void main() {
 
     test('successful loadMore triggers exactly one notifyListeners', () async {
       // Arrange — seed first with a reload.
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      loader.enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      loader.enqueueValue(<int>[1, 2]);
+      loader.enqueueValue(<int>[3, 4]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
       final countAfterReload = notifyCount;
 
       // Act
-      await dispatcher.loadMore<_TestParams>(
+      await dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: loader.call,
       );
@@ -473,7 +469,7 @@ void main() {
 
       // Act & Assert — the thrown error is expected.
       await expectLater(
-        dispatcher.reload<_TestParams>(
+        dispatcher.reload(
           params: const _TestParams(),
           load: loader.call,
         ),
@@ -485,11 +481,12 @@ void main() {
           reason: 'notifyListeners only fires when items actually change');
     });
 
-    test('minLength rejection from NON-empty items triggers one '
+    test(
+        'minLength rejection from NON-empty items triggers one '
         'notification (clearing is an items change)', () async {
       // Arrange — seed non-empty items so the subsequent clear is observable.
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      loader.enqueueValue(<int>[1, 2, 3]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: loader.call,
       );
@@ -497,7 +494,7 @@ void main() {
       expect(dispatcher.items, isNotEmpty);
 
       // Act — short query triggers minLength-clear branch.
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(query: 'ab'),
         load: loader.call,
       );
@@ -509,14 +506,15 @@ void main() {
           reason: 'clearing items from non-empty to empty is a change');
     });
 
-    test('minLength rejection when items are already empty fires no '
+    test(
+        'minLength rejection when items are already empty fires no '
         'notification', () async {
       // Arrange — items already empty right after construction.
       expect(dispatcher.items, isEmpty);
       final countBefore = notifyCount;
 
       // Act — short query, items stay empty (no change).
-      await dispatcher.reload<_TestParams>(
+      await dispatcher.reload(
         params: const _TestParams(query: 'ab'),
         load: loader.call,
       );
@@ -527,14 +525,15 @@ void main() {
           reason: 'no items change means no notification');
     });
 
-    test('isLoading transition alone does not fire a notification (start '
+    test(
+        'isLoading transition alone does not fire a notification (start '
         'phase of a pending load)', () async {
       // Arrange — a gated loader keeps isLoading=true for a while.
-      final gate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> slow(_TestParams _) => gate.future;
+      final gate = Completer<List<int>>();
+      Future<List<int>> slow(_TestParams _) => gate.future;
 
       // Act — kick off the reload but DO NOT await.
-      final future = dispatcher.reload<_TestParams>(
+      final future = dispatcher.reload(
         params: const _TestParams(),
         load: slow,
       );
@@ -547,7 +546,7 @@ void main() {
           reason: 'isLoading transition alone must not notify');
 
       // Cleanup — let the loader finish so tearDown can dispose cleanly.
-      gate.complete(_TestPage<int>(<int>[1, 2], hasMore: true));
+      gate.complete(<int>[1, 2]);
       await future;
       expect(notifyCount, equals(1),
           reason: 'the terminal items change fires exactly one notification');
@@ -555,23 +554,24 @@ void main() {
   });
 
   group('ACListLoadingDispatcher — dispose & cancel safety (US1)', () {
-    test('dispose() while a reload is in flight: pending result discarded '
+    test(
+        'dispose() while a reload is in flight: pending result discarded '
         'and no notifications fire after dispose', () async {
       // Arrange
       final dispatcher = _buildDispatcher();
       var notifyCount = 0;
       dispatcher.addListener(() => notifyCount++);
-      final gate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> gatedLoad(_TestParams _) => gate.future;
+      final gate = Completer<List<int>>();
+      Future<List<int>> gatedLoad(_TestParams _) => gate.future;
 
       // Act
-      final reloadFuture = dispatcher.reload<_TestParams>(
+      final reloadFuture = dispatcher.reload(
         params: const _TestParams(),
         load: gatedLoad,
       );
       dispatcher.dispose();
       final countAfterDispose = notifyCount;
-      gate.complete(_TestPage<int>(<int>[1, 2, 3], hasMore: true));
+      gate.complete(<int>[1, 2, 3]);
       // Let any residual microtasks drain. We deliberately swallow the future
       // because cancellation-after-dispose is silent (no throws expected).
       try {
@@ -597,7 +597,8 @@ void main() {
       expect(dispatcher.dispose, returnsNormally);
     });
 
-    test('addListener after dispose throws FlutterError (ChangeNotifier '
+    test(
+        'addListener after dispose throws FlutterError (ChangeNotifier '
         'contract)', () {
       // Arrange
       final dispatcher = _buildDispatcher();
@@ -625,31 +626,32 @@ void main() {
       dispatcher.dispose();
     });
 
-    test('cancel() with an active load: isLoading reset, items and hasMore '
+    test(
+        'cancel() with an active load: isLoading reset, items and hasMore '
         'preserved, pending result ignored', () async {
       // Arrange — seed a known list first.
       final dispatcher = _buildDispatcher();
-      final seedLoader = FakeLoader<ACListLoadingResult<int>>();
-      seedLoader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      await dispatcher.reload<_TestParams>(
+      final seedLoader = FakeLoader<List<int>>();
+      seedLoader.enqueueValue(<int>[1, 2]);
+      await dispatcher.reload(
         params: const _TestParams(),
         load: seedLoader.call,
       );
       final itemsBefore = List<int>.from(dispatcher.items);
       final hasMoreBefore = dispatcher.hasMore;
       // Start a loadMore that will be cancelled before completion.
-      final gate = Completer<ACListLoadingResult<int>>();
-      Future<ACListLoadingResult<int>> gatedLoad(_TestParams _) => gate.future;
+      final gate = Completer<List<int>>();
+      Future<List<int>> gatedLoad(_TestParams _) => gate.future;
 
       // Act
-      final loadMoreFuture = dispatcher.loadMore<_TestParams>(
+      final loadMoreFuture = dispatcher.loadMore(
         params: const _TestParams(offset: 2),
         load: gatedLoad,
       );
       expect(dispatcher.isLoading, isTrue);
       await dispatcher.cancel();
       // Complete the loader after cancel — result must be ignored.
-      gate.complete(_TestPage<int>(<int>[9, 9, 9], hasMore: true));
+      gate.complete(<int>[9, 9, 9]);
       try {
         await loadMoreFuture;
       } on Object catch (_) {
@@ -666,33 +668,17 @@ void main() {
   });
 
   group('ACListLoadingDispatcher — params subtype polymorphism (Phase 8)', () {
-    test('reload accepts ACOffsetListLoadingParamsMixin subtype', () async {
-      // Arrange
-      final dispatcher = _buildDispatcher();
-      final loader = FakeLoader<ACListLoadingResult<int>>();
-      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-
-      // Act
-      await dispatcher.reload<_TestParams>(
-        params: const _TestParams(offset: 0, limit: 20),
-        load: loader.call,
-      );
-
-      // Assert
-      expect(dispatcher.items, equals(<int>[1, 2]));
-      expect(loader.calls.single, isA<ACOffsetListLoadingParamsMixin>());
-
-      dispatcher.dispose();
-    });
-
-    test('reload accepts ACCursorListLoadingParamsMixin subtype', () async {
-      // Arrange
-      final dispatcher = _buildDispatcher();
-      final loader = FakeLoader<ACListLoadingResult<int>>();
+    test(
+        'ACCustomListLoadingDispatcher accepts ACCursorListLoadingParamsMixin '
+        'subtype', () async {
+      // Arrange — cursor params + DTO-based response.
+      final dispatcher = ACCustomListLoadingDispatcher<_TestCursorParams,
+          _TestPage<int>, int>();
+      final loader = FakeLoader<_TestPage<int>>();
       loader.enqueueValue(_TestPage<int>(<int>[10, 20], hasMore: true));
 
       // Act
-      await dispatcher.reload<_TestCursorParams>(
+      await dispatcher.reload(
         params: const _TestCursorParams(limit: 20),
         load: loader.call,
       );
@@ -708,18 +694,19 @@ void main() {
     test('loadMore with cursor params passes cursor through to the loader',
         () async {
       // Arrange — seed with a reload first.
-      final dispatcher = _buildDispatcher();
-      final seedLoader = FakeLoader<ACListLoadingResult<int>>();
+      final dispatcher = ACCustomListLoadingDispatcher<_TestCursorParams,
+          _TestPage<int>, int>();
+      final seedLoader = FakeLoader<_TestPage<int>>();
       seedLoader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
-      await dispatcher.reload<_TestCursorParams>(
+      await dispatcher.reload(
         params: const _TestCursorParams(limit: 2),
         load: seedLoader.call,
       );
 
       // Act
-      final more = FakeLoader<ACListLoadingResult<int>>();
+      final more = FakeLoader<_TestPage<int>>();
       more.enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: false));
-      await dispatcher.loadMore<_TestCursorParams>(
+      await dispatcher.loadMore(
         params: const _TestCursorParams(limit: 2, cursor: 'page-2'),
         load: more.call,
       );

@@ -15,13 +15,19 @@
 
 ## 0.1.0
 
-- Добавлен `ACListLoadingDispatcher<T>` — доменный компонент для загрузки списков с пагинацией и поиском.
+- Добавлен `ACListLoadingDispatcher<P, R, T>` — доменный компонент для загрузки списков с пагинацией и поиском.
   - Диспатчер расширяет `ChangeNotifier` из `package:flutter/foundation.dart`; подписка через `addListener` / `ListenableBuilder`.
   - Методы `reload`, `loadMore`, `cancel`, `dispose` (синхронный).
-  - Публичные геттеры: `items` (unmodifiable), `isLoading`, `hasMore`, `searchStrategy`.
+  - Публичные геттеры: `items` (unmodifiable), `isLoading`, `hasMore`, `searchStrategy`, `parser`.
   - `notifyListeners()` вызывается только при изменении накопленного списка элементов.
   - Исключения loader'а пробрасываются наружу через возвращённый Future; флаг `isLoading` сбрасывается через `try/finally`.
-- Добавлен миксин `ACListLoadingResult<T>` — контракт результата loader'а (`items`, `hasMore`). Потребитель подмешивает его к своему DTO.
+- Добавлен `ACListLoadingParser<P, R, T>` — strategy-интерфейс с методами `extractItems(params, result)` и `hasMore(params, result)`. Передаётся в диспатчер обязательным параметром конструктора.
+  - `ACDefaultListLoadingParser<P, T>` — для offset-пагинации: loader возвращает голый `List<T>`, `hasMore` вычисляется по `params.limit`.
+  - `ACResultListLoadingParser<P, R, T>` — для DTO, подмешавших `ACListLoadingResult<T>`; делегирует в поля DTO.
+- Добавлены fassade-диспатчеры с преднастроенным парсером:
+  - `ACDefaultListLoadingDispatcher<P, T>` — offset + голый `List<T>`.
+  - `ACCustomListLoadingDispatcher<P, R, T>` — DTO с `ACListLoadingResult<T>` миксином.
+- Миксин `ACListLoadingResult<T>` — контракт DTO (`items`, `hasMore`) для Custom-кейса.
 - Добавлена иерархия миксинов параметров:
   - `ACListLoadingParamsMixin` — базовый контракт (`limit`, `query`).
   - `ACOffsetListLoadingParamsMixin on ACListLoadingParamsMixin` — добавляет `offset` для offset-пагинации.
