@@ -15,16 +15,24 @@
 
 ## 0.1.0
 
-- Добавлен `ACListLoadingDispatcher<T, R>` — доменный компонент для загрузки списков с пагинацией и поиском:
-  - Методы `reload`, `loadMore`, `cancel`, `dispose`.
-  - Наблюдаемое состояние через `ACNotifier<ACListLoadingState<T>>` (items, isLoading, hasMore, error).
-  - `ACSearchStrategy` — встроенный debounce (300мс) и minLength (3) для поиска в `reload`.
-  - `ACCancelStrategy` + дефолтная `ACOperationCancelStrategy` на `CancelableOperation` из `package:async`.
-  - Override стратегии отмены per-call и через конструктор.
-  - `ACListLoadingParamsMixin` — контракт пользовательских параметров (limit/offset/query).
-  - `ACParseResult<T>` + typedef `ACListLoadingParser<T, R>` — адаптер ответа loader'а.
-  - Поддержка offset, cursor и произвольных стратегий пагинации через parser-колбэк.
-- Новая зависимость: `async: ^2.11.0`.
+- Добавлен `ACListLoadingDispatcher<T>` — доменный компонент для загрузки списков с пагинацией и поиском.
+  - Диспатчер расширяет `ChangeNotifier` из `package:flutter/foundation.dart`; подписка через `addListener` / `ListenableBuilder`.
+  - Методы `reload`, `loadMore`, `cancel`, `dispose` (синхронный).
+  - Публичные геттеры: `items` (unmodifiable), `isLoading`, `hasMore`, `searchStrategy`.
+  - `notifyListeners()` вызывается только при изменении накопленного списка элементов.
+  - Исключения loader'а пробрасываются наружу через возвращённый Future; флаг `isLoading` сбрасывается через `try/finally`.
+- Добавлен миксин `ACListLoadingResult<T>` — контракт результата loader'а (`items`, `hasMore`). Потребитель подмешивает его к своему DTO.
+- Добавлен миксин `ACListLoadingParamsMixin` — контракт пользовательских параметров (`limit`, `offset`, `query`).
+- Добавлена поведенческая стратегия поиска:
+  - `abstract class ACSearchStrategy` с методами `schedule`, `cancel`, `dispose`.
+  - Дефолтная реализация `ACDebouncedSearchStrategy` (debounce 300 мс / minLength 3); хранит таймер и последний применённый query внутри себя.
+- Добавлена стратегия отмены:
+  - `abstract class ACCancelStrategy` (`run`, `cancel`, `isActive`).
+  - Дефолтная реализация `ACOperationCancelStrategy` на `CancelableOperation` из `package:async`.
+  - Параметр `cancelStrategy` задаётся только per-call (в методах `reload`/`loadMore`).
+- Поддержка offset, cursor и произвольных стратегий пагинации через миксин `ACListLoadingResult` (без parser-колбэка).
+- Пакет теперь Flutter-совместим: явная зависимость от `flutter: sdk: flutter`.
+- Новая runtime-зависимость: `async: ^2.11.0`.
 
 ## 0.0.3
 
