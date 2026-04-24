@@ -10,7 +10,7 @@ import 'helpers/fake_loader.dart';
 
 /// Minimal implementation of [ACListLoadingParamsMixin] used only in search
 /// tests.
-final class _TestParams with ACListLoadingParamsMixin {
+final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
   const _TestParams({this.limit, this.offset, this.query});
 
   @override

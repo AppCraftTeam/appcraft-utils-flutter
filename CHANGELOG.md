@@ -22,7 +22,11 @@
   - `notifyListeners()` вызывается только при изменении накопленного списка элементов.
   - Исключения loader'а пробрасываются наружу через возвращённый Future; флаг `isLoading` сбрасывается через `try/finally`.
 - Добавлен миксин `ACListLoadingResult<T>` — контракт результата loader'а (`items`, `hasMore`). Потребитель подмешивает его к своему DTO.
-- Добавлен миксин `ACListLoadingParamsMixin` — контракт пользовательских параметров (`limit`, `offset`, `query`).
+- Добавлена иерархия миксинов параметров:
+  - `ACListLoadingParamsMixin` — базовый контракт (`limit`, `query`).
+  - `ACOffsetListLoadingParamsMixin on ACListLoadingParamsMixin` — добавляет `offset` для offset-пагинации.
+  - `ACCursorListLoadingParamsMixin on ACListLoadingParamsMixin` — добавляет `cursor` для cursor-пагинации.
+  - Диспатчер принимает любой `P extends ACListLoadingParamsMixin` — пользователь выбирает подходящую пару под свой API.
 - Добавлена поведенческая стратегия поиска:
   - `abstract class ACSearchStrategy` с методами `schedule`, `cancel`, `dispose`.
   - Дефолтная реализация `ACDebouncedSearchStrategy` (debounce 300 мс / minLength 3); хранит таймер и последний применённый query внутри себя.

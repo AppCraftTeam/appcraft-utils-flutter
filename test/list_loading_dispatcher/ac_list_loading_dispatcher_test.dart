@@ -13,13 +13,27 @@ import 'helpers/fake_loader.dart';
 ///
 /// The dispatcher reads only [query]; [limit] and [offset] are carried along
 /// for symmetry with the public contract.
-final class _TestParams with ACListLoadingParamsMixin {
+final class _TestParams with ACListLoadingParamsMixin, ACOffsetListLoadingParamsMixin {
   const _TestParams({this.limit, this.offset, this.query});
 
   @override
   final int? limit;
   @override
   final int? offset;
+  @override
+  final String? query;
+}
+
+/// Cursor-based params used to verify the dispatcher accepts any subtype of
+/// [ACListLoadingParamsMixin] — here specifically [ACCursorListLoadingParamsMixin].
+final class _TestCursorParams
+    with ACListLoadingParamsMixin, ACCursorListLoadingParamsMixin {
+  const _TestCursorParams({this.limit, this.cursor, this.query});
+
+  @override
+  final int? limit;
+  @override
+  final String? cursor;
   @override
   final String? query;
 }
@@ -646,6 +660,75 @@ void main() {
       expect(dispatcher.isLoading, isFalse);
       expect(dispatcher.items, equals(itemsBefore));
       expect(dispatcher.hasMore, equals(hasMoreBefore));
+
+      dispatcher.dispose();
+    });
+  });
+
+  group('ACListLoadingDispatcher — params subtype polymorphism (Phase 8)', () {
+    test('reload accepts ACOffsetListLoadingParamsMixin subtype', () async {
+      // Arrange
+      final dispatcher = _buildDispatcher();
+      final loader = FakeLoader<ACListLoadingResult<int>>();
+      loader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
+
+      // Act
+      await dispatcher.reload<_TestParams>(
+        params: const _TestParams(offset: 0, limit: 20),
+        load: loader.call,
+      );
+
+      // Assert
+      expect(dispatcher.items, equals(<int>[1, 2]));
+      expect(loader.calls.single, isA<ACOffsetListLoadingParamsMixin>());
+
+      dispatcher.dispose();
+    });
+
+    test('reload accepts ACCursorListLoadingParamsMixin subtype', () async {
+      // Arrange
+      final dispatcher = _buildDispatcher();
+      final loader = FakeLoader<ACListLoadingResult<int>>();
+      loader.enqueueValue(_TestPage<int>(<int>[10, 20], hasMore: true));
+
+      // Act
+      await dispatcher.reload<_TestCursorParams>(
+        params: const _TestCursorParams(limit: 20),
+        load: loader.call,
+      );
+
+      // Assert
+      expect(dispatcher.items, equals(<int>[10, 20]));
+      expect(loader.calls.single, isA<ACCursorListLoadingParamsMixin>());
+      expect((loader.calls.single as _TestCursorParams).cursor, isNull);
+
+      dispatcher.dispose();
+    });
+
+    test('loadMore with cursor params passes cursor through to the loader',
+        () async {
+      // Arrange — seed with a reload first.
+      final dispatcher = _buildDispatcher();
+      final seedLoader = FakeLoader<ACListLoadingResult<int>>();
+      seedLoader.enqueueValue(_TestPage<int>(<int>[1, 2], hasMore: true));
+      await dispatcher.reload<_TestCursorParams>(
+        params: const _TestCursorParams(limit: 2),
+        load: seedLoader.call,
+      );
+
+      // Act
+      final more = FakeLoader<ACListLoadingResult<int>>();
+      more.enqueueValue(_TestPage<int>(<int>[3, 4], hasMore: false));
+      await dispatcher.loadMore<_TestCursorParams>(
+        params: const _TestCursorParams(limit: 2, cursor: 'page-2'),
+        load: more.call,
+      );
+
+      // Assert
+      expect(dispatcher.items, equals(<int>[1, 2, 3, 4]));
+      final params = more.calls.single as _TestCursorParams;
+      expect(params.cursor, equals('page-2'));
+      expect(dispatcher.hasMore, isFalse);
 
       dispatcher.dispose();
     });
