@@ -13,6 +13,10 @@
 - Каждое изменение — отдельный пункт, без лишних деталей реализации.
 -->
 
+## 0.1.1
+
+- Renamed `lib/src/notifier/src/aс_notifier.dart` to `ac_notifier.dart`: the previous name contained a Cyrillic letter that violated the `file_names` lint and lowered the pub.dev "Pass static analysis" score.
+
 ## 0.1.0
 
 - Prepared for the first public release on pub.dev.
