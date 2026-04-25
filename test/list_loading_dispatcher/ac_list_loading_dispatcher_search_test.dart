@@ -1,4 +1,4 @@
-// ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors
+// ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors, unnecessary_lambdas
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_dispatcher.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_list_loading_params.dart';
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_search_strategy.dart';
@@ -20,10 +20,10 @@ final class _TestParams
   final String? query;
 }
 
-ACDefaultListLoadingDispatcher<_TestParams, int> _buildDispatcher({
+ACDefaultListLoadingDispatcher<int> _buildDispatcher({
   ACSearchStrategy? searchStrategy,
 }) =>
-    ACDefaultListLoadingDispatcher<_TestParams, int>(
+    ACDefaultListLoadingDispatcher<int>(
       searchStrategy: searchStrategy,
     );
 
@@ -40,7 +40,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -66,7 +66,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: ''),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -90,7 +90,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(),
-              load: seedLoader.call,
+              load: (p) => seedLoader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -101,7 +101,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'ab'),
-              load: searchLoader.call,
+              load: (p) => searchLoader.call(p),
             )
             .ignore();
         async.elapse(const Duration(seconds: 1));
@@ -131,7 +131,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 100));
@@ -168,7 +168,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'joh'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 100));
@@ -177,7 +177,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 100));
@@ -214,7 +214,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 300));
@@ -225,7 +225,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -252,7 +252,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 300));
@@ -263,7 +263,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -274,7 +274,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 100));
@@ -306,7 +306,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'alex'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 100));
@@ -338,7 +338,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -349,7 +349,7 @@ void main() {
         dispatcher
             .loadMore(
               params: const _TestParams(offset: 2, query: 'abc'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -375,7 +375,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -385,7 +385,7 @@ void main() {
         dispatcher
             .loadMore(
               params: const _TestParams(offset: 2, query: 'ab'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -412,7 +412,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.elapse(const Duration(milliseconds: 300));
@@ -424,7 +424,7 @@ void main() {
         dispatcher
             .loadMore(
               params: const _TestParams(offset: 2, query: 'different'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();
@@ -436,7 +436,7 @@ void main() {
         dispatcher
             .reload(
               params: const _TestParams(query: 'john'),
-              load: loader.call,
+              load: (p) => loader.call(p),
             )
             .ignore();
         async.flushMicrotasks();

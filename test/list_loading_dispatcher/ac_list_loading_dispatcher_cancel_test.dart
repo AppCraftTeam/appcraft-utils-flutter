@@ -1,4 +1,4 @@
-// ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors
+// ignore_for_file: cascade_invocations, unused_element_parameter, prefer_const_constructors, unnecessary_lambdas
 import 'dart:async';
 
 import 'package:appcraft_utils_flutter/src/list_loading_dispatcher/src/ac_cancel_strategy.dart';
@@ -51,8 +51,8 @@ final class _SpyCancelStrategy implements ACCancelStrategy {
   bool get isActive => _inner.isActive;
 }
 
-ACDefaultListLoadingDispatcher<_TestParams, int> _buildDispatcher() =>
-    ACDefaultListLoadingDispatcher<_TestParams, int>();
+ACDefaultListLoadingDispatcher<int> _buildDispatcher() =>
+    ACDefaultListLoadingDispatcher<int>();
 
 void main() {
   group('ACListLoadingDispatcher — cancel strategy (US3, post-T047)', () {
@@ -67,7 +67,7 @@ void main() {
       // Act
       await dispatcher.reload(
         params: const _TestParams(),
-        load: loader.call,
+        load: (p) => loader.call(p),
         cancelStrategy: spy,
       );
 
@@ -89,7 +89,7 @@ void main() {
       seedLoader.enqueueValue(<int>[1, 2]);
       await dispatcher.reload(
         params: const _TestParams(),
-        load: seedLoader.call,
+        load: (p) => seedLoader.call(p),
       );
       expect(dispatcher.hasMore, isTrue);
 
@@ -100,7 +100,7 @@ void main() {
       // Act
       await dispatcher.loadMore(
         params: const _TestParams(offset: 2),
-        load: loadMoreLoader.call,
+        load: (p) => loadMoreLoader.call(p),
         cancelStrategy: spy,
       );
 
@@ -135,7 +135,7 @@ void main() {
       );
       final secondFuture = dispatcher.reload(
         params: const _TestParams(),
-        load: secondLoader.call,
+        load: (p) => secondLoader.call(p),
         cancelStrategy: secondSpy,
       );
       // Release the first loader so its Future can resolve; its result must
@@ -175,7 +175,7 @@ void main() {
       );
       final secondFuture = dispatcher.reload(
         params: const _TestParams(),
-        load: secondLoader.call,
+        load: (p) => secondLoader.call(p),
       );
       firstGate.complete(<int>[1, 1, 1]);
       await Future.wait(<Future<void>>[firstFuture, secondFuture]);
@@ -201,12 +201,12 @@ void main() {
       // Act — first reload with override; second reload without.
       await dispatcher.reload(
         params: const _TestParams(),
-        load: loader.call,
+        load: (p) => loader.call(p),
         cancelStrategy: firstSpy,
       );
       await dispatcher.reload(
         params: const _TestParams(),
-        load: loader.call,
+        load: (p) => loader.call(p),
       );
 
       // Assert — override was used only once; subsequent run did NOT touch it.
