@@ -30,6 +30,7 @@ class ACEmail extends ACInput<String, Exception> {
       const ACEmailValidation()
     ];
 
+  /// Возвращает новый экземпляр с переопределёнными полями.
   ACEmail copyWith({
     String? value,
     bool? isPure,

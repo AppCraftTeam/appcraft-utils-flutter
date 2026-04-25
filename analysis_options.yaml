@@ -1,6 +1,8 @@
 include: package:lints/recommended.yaml
 
 analyzer:
+  exclude:
+    - example/**
   errors:
     file_names: ignore
     missing_required_param: error
@@ -126,7 +128,7 @@ linter:
     prefer_typing_uninitialized_variables: true
     prefer_void_to_null: true
     provide_deprecation_message: true
-    public_member_api_docs: false
+    public_member_api_docs: true
     recursive_getters: true
     slash_for_doc_comments: true
     sort_child_properties_last: false

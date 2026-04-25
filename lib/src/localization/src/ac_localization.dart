@@ -1,28 +1,40 @@
 /// Абстрактный класс для локализации сообщений приложения.
 /// Определяет набор обязательных сообщений и методов для конкретной локали.
 abstract class ACLocalization {
+  /// Создаёт экземпляр локализации.
   const ACLocalization();
 
+  /// Сообщение об ошибке `WipException`.
   String get wipException;
 
+  /// Сообщение об ошибке `NotFoundException`.
   String get notFoundException;
 
+  /// Сообщение об ошибке `RequiredFieldException`.
   String get requiredFieldException;
 
+  /// Сообщение об ошибке `WrongPasswordException`.
   String get wrongPasswordException;
 
+  /// Сообщение об ошибке `WrongLoginException`.
   String get wrongLoginException;
 
+  /// Сообщение об ошибке `WrongEmailException`.
   String get wrongEmailException;
 
+  /// Сообщение об ошибке `UnauthorizedException`.
   String get unauthorizedException;
 
+  /// Сообщение об ошибке `MinLengthException` для указанного [minLength].
   String minLengthException(int minLength);
 
+  /// Сообщение об ошибке `MaxLengthException` для указанного [maxLength].
   String maxLengthException(int maxLength);
 }
 
+/// Русская реализация [ACLocalization].
 class ACLocalizationRu implements ACLocalization {
+  /// Создаёт русскую локализацию.
   const ACLocalizationRu();
 
   @override
@@ -32,7 +44,7 @@ class ACLocalizationRu implements ACLocalization {
   @override
   String get notFoundException =>
     'Ресурс не найден';
-  
+
   @override
   String get requiredFieldException =>
     'Обязательное поле';
@@ -50,7 +62,7 @@ class ACLocalizationRu implements ACLocalization {
     'Некорректный E-mail';
 
   @override
-  String get unauthorizedException => 
+  String get unauthorizedException =>
     'Требуется авторизация';
 
   @override
@@ -62,7 +74,9 @@ class ACLocalizationRu implements ACLocalization {
     'Длина превышает $maxLength символов';
 }
 
+/// Английская реализация [ACLocalization].
 class ACLocalizationEn implements ACLocalization {
+  /// Создаёт английскую локализацию.
   const ACLocalizationEn();
 
   @override
@@ -90,7 +104,7 @@ class ACLocalizationEn implements ACLocalization {
     'Wrong E-mail';
 
   @override
-  String get unauthorizedException => 
+  String get unauthorizedException =>
     'Unauthorized';
 
   @override
@@ -100,5 +114,5 @@ class ACLocalizationEn implements ACLocalization {
   @override
   String maxLengthException(int maxLength) =>
     'Length exceeds $maxLength characters';
-  
+
 }
