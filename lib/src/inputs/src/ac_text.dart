@@ -42,6 +42,7 @@ class ACText extends ACInput<String, Exception> {
       ACMaxLengthValidation(maxLength ?? 0)
   ];
 
+  /// Возвращает новый экземпляр с переопределёнными полями.
   ACText copyWith({
     String? value,
     bool? isPure,

@@ -1,0 +1,14 @@
+name: appcraft_utils_flutter_example
+description: Minimal CLI example demonstrating the public API of appcraft_utils_flutter.
+version: 0.1.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  appcraft_utils_flutter:
+    path: ../
+
+dev_dependencies:
+  lints: ^5.0.0

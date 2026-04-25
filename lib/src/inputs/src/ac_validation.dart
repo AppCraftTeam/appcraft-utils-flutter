@@ -4,6 +4,7 @@ import '../../exceptions/src/ac_exception.dart';
 /// [V] — тип значения, которое проверяется.
 /// [E] — тип ошибки, которая возвращается при нарушении валидации.
 abstract class ACValidation<V, E> {
+  /// Создаёт валидацию.
   const ACValidation();
 
   /// Метод для проверки значения.
@@ -32,6 +33,7 @@ extension ACValidationListExt<V, E> on List<ACValidation<V, E>> {
 
 /// Валидация на обязательное заполнение текстового поля
 class ACRequiredValidation<T> extends ACValidation<T, Exception> {
+  /// Создаёт валидацию обязательного значения.
   const ACRequiredValidation();
 
   @override
@@ -51,8 +53,10 @@ class ACRequiredValidation<T> extends ACValidation<T, Exception> {
 
 /// Валидация на минимальную длину текста
 class ACMinLengthValidation extends ACValidation<String, Exception> {
+  /// Создаёт валидацию минимальной длины [minLength].
   const ACMinLengthValidation(this.minLength);
 
+  /// Минимально допустимая длина значения.
   final int minLength;
 
   @override
@@ -65,8 +69,10 @@ class ACMinLengthValidation extends ACValidation<String, Exception> {
 
 /// Валидация на максимальную длину текста
 class ACMaxLengthValidation extends ACValidation<String, Exception> {
+  /// Создаёт валидацию максимальной длины [maxLength].
   const ACMaxLengthValidation(this.maxLength);
 
+  /// Максимально допустимая длина значения.
   final int maxLength;
 
   @override
@@ -79,10 +85,13 @@ class ACMaxLengthValidation extends ACValidation<String, Exception> {
 
 /// Базовая абстрактная валидация по регулярному выражению
 abstract class ACRegExpValidation<E> extends ACValidation<String, E> {
+  /// Создаёт валидацию по регулярному выражению.
   const ACRegExpValidation();
 
+  /// Регулярное выражение, которому должно удовлетворять значение.
   RegExp get regExp;
 
+  /// Ошибка, возвращаемая при несовпадении значения с [regExp].
   E get error;
   
   @override
@@ -92,9 +101,10 @@ abstract class ACRegExpValidation<E> extends ACValidation<String, E> {
 
 /// Валидация для email с использованием регулярного выражения
 class ACEmailValidation extends ACRegExpValidation<Exception> {
+  /// Создаёт валидацию формата email.
   const ACEmailValidation();
 
-  /// Регулярное выражение для проверки email
+  /// Регулярное выражение для проверки email.
   static final emailValidRegExp = RegExp(r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$');
 
   @override
