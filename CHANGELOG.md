@@ -13,7 +13,7 @@
 - Каждое изменение — отдельный пункт, без лишних деталей реализации.
 -->
 
-## 0.1.0 - 2026-04-25
+## 0.1.0
 
 - Prepared for the first public release on pub.dev.
 - Filled in `pubspec.yaml` metadata: `description`, `homepage`, `issue_tracker`, `topics`.
