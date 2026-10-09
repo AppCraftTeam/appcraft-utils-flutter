@@ -9,7 +9,7 @@ Lightweight Dart utilities and Flutter-friendly extensions for forms, validation
 
 ```yaml
 dependencies:
-  appcraft_utils_flutter: ^0.1.0
+  appcraft_utils_flutter: ^0.2.0
 ```
 
 ```bash
