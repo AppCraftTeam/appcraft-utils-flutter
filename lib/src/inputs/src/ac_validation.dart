@@ -34,7 +34,10 @@ extension ACValidationListExt<V, E> on List<ACValidation<V, E>> {
   }
 }
 
-/// Validation that a text field is filled in.
+/// Validation that a value is present.
+///
+/// Returns [RequiredFieldException] when the value is `null`, an empty
+/// `String` or an empty `Iterable`; otherwise returns `null`.
 class ACRequiredValidation<T> extends ACValidation<T, Exception> {
   /// Creates a required value validation.
   const ACRequiredValidation();

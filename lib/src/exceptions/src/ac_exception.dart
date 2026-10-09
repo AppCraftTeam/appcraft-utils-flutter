@@ -4,7 +4,7 @@ final _localization = ACLocalizationManager.instance.localization;
 
 /// Abstract base class for custom application exceptions.
 ///
-/// Inherits from the standard [Exception].
+/// Implements the standard [Exception] interface.
 abstract class ACException implements Exception {
   /// Creates an exception instance.
   const ACException();
