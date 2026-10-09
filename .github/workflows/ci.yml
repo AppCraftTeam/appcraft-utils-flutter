@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Analyze, test, dry-run publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Get dependencies
+        run: dart pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: dart analyze --fatal-infos --fatal-warnings
+
+      - name: Run tests with coverage
+        run: dart test --coverage-path=coverage/lcov.info
+
+      - name: Check lib/ coverage threshold
+        shell: bash
+        env:
+          MIN_COVERAGE: 70
+        run: |
+          set -euo pipefail
+          # dart test writes absolute SF: paths; strip the workspace prefix before matching lib/.
+          awk -v min="$MIN_COVERAGE" -v root="$PWD" '
+            /^SF:/ {
+              path = substr($0, 4)
+              if (index(path, root "/") == 1) path = substr(path, length(root) + 2)
+              inlib = (path ~ /^lib\//)
+            }
+            inlib && /^LF:/ { lf += substr($0, 4) }
+            inlib && /^LH:/ { lh += substr($0, 4) }
+            END {
+              if (lf == 0) {
+                print "::error::No lib/ lines found in coverage/lcov.info"
+                exit 1
+              }
+              pct = lh * 100 / lf
+              if (pct < min) {
+                printf "::error::lib/ coverage %.2f%% is below threshold %s%%\n", pct, min
+                exit 1
+              }
+              printf "lib/ coverage: %.2f%% (threshold %s%%)\n", pct, min
+            }
+          ' coverage/lcov.info
+
+      - name: Dry-run publish
+        run: dart pub publish --dry-run
