@@ -44,7 +44,10 @@ abstract class ACNotifier<T> {
   ///
   /// Если подписчиков нет и [resendLastEvent] равен `true`,
   /// событие сохраняется и будет отправлено первому подписчику.
+  /// После [dispose] событие отбрасывается.
   void send(T event) {
+    if (_streamController.isClosed) return;
+
     if (_streamController.hasListener) {
       _streamController.add(event);
     } else if (resendLastEvent) {
@@ -53,7 +56,7 @@ abstract class ACNotifier<T> {
   }
 
   void _trySendLastEvent() {
-    if (!resendLastEvent) return;
+    if (!resendLastEvent || _streamController.isClosed) return;
 
     final lastEvent = _lastEvent;
     if (lastEvent == null) return;
@@ -62,7 +65,13 @@ abstract class ACNotifier<T> {
   }
 
   /// Закрывает внутренний поток и освобождает ресурсы нотификатора.
-  Future<void> dispose() async => _streamController.close();
+  ///
+  /// Сохранённое событие сбрасывается. После вызова [send] ничего не делает,
+  /// а новые подписки сразу завершаются без событий. Повторный вызов безопасен.
+  Future<void> dispose() async {
+    _lastEvent = null;
+    await _streamController.close();
+  }
 }
 
 /// Подписка на события [ACNotifier].

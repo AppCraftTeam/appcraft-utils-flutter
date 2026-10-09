@@ -116,13 +116,55 @@ void main() {
       expect(newDone, isTrue);
     });
 
-    // NOTE: possible bug, see report
-    test('listen throws after dispose when an event is stored', () async {
+    test('listen after dispose completes without the stored event', () async {
       final notifier = _notifier(resendLastEvent: true)..send('stored');
+      await notifier.dispose();
+      final events = <String>[];
+      var done = false;
 
+      final subscription = notifier.listen(events.add)
+        ..onDone(() => done = true);
+      addTearDown(subscription.cancel);
+      await pumpEventQueue();
+
+      expect(done, isTrue);
+      expect(events, isEmpty);
+    });
+
+    test('listenAny after dispose completes without the stored event',
+        () async {
+      final notifier = _notifier(resendLastEvent: true)..send('stored');
+      await notifier.dispose();
+      var calls = 0;
+      var done = false;
+
+      final subscription = notifier.listenAny(() => calls++)
+        ..onDone(() => done = true);
+      addTearDown(subscription.cancel);
+      await pumpEventQueue();
+
+      expect(done, isTrue);
+      expect(calls, 0);
+    });
+
+    test('does not store an event sent after dispose', () async {
+      final notifier = _notifier(resendLastEvent: true);
+      await notifier.dispose();
+      notifier.send('e');
+      final events = <String>[];
+
+      final subscription = notifier.listen(events.add);
+      addTearDown(subscription.cancel);
+      await pumpEventQueue();
+
+      expect(events, isEmpty);
+    });
+
+    test('dispose can be called repeatedly', () async {
+      final notifier = _notifier();
       await notifier.dispose();
 
-      expect(() => notifier.listen(null), throwsStateError);
+      await expectLater(notifier.dispose(), completes);
     });
   });
 }
