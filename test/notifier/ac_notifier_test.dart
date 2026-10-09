@@ -147,7 +147,7 @@ void main() {
       expect(calls, 0);
     });
 
-    test('does not store an event sent after dispose', () async {
+    test('send after dispose does not throw and delivers nothing', () async {
       final notifier = _notifier(resendLastEvent: true);
       await notifier.dispose();
       notifier.send('e');
@@ -155,6 +155,21 @@ void main() {
 
       final subscription = notifier.listen(events.add);
       addTearDown(subscription.cancel);
+      await pumpEventQueue();
+
+      expect(events, isEmpty);
+    });
+
+    test('send while dispose is pending does not throw and delivers nothing',
+        () async {
+      final notifier = _notifier();
+      final events = <String>[];
+      final subscription = notifier.listen(events.add);
+      addTearDown(subscription.cancel);
+
+      final disposing = notifier.dispose();
+      notifier.send('e');
+      await disposing;
       await pumpEventQueue();
 
       expect(events, isEmpty);
