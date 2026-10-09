@@ -21,5 +21,5 @@ class ACLocalizationManager {
   /// Если [localeName] указан — возвращается локализация для него,
   /// иначе — текущая локаль. Если локаль не найдена — по умолчанию русская.
   ACLocalization localization([String? localeName]) =>
-    localizations[localeName ?? currentLocale] ?? const ACLocalizationRu();
+      localizations[localeName ?? currentLocale] ?? const ACLocalizationRu();
 }

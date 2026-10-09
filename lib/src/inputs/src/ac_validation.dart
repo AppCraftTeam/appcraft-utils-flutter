@@ -9,13 +9,12 @@ abstract class ACValidation<V, E> {
 
   /// Метод для проверки значения.
   /// Возвращает объект ошибки [E] при некорректном значении или null, если все ок.
-  E? validate(V? value); 
+  E? validate(V? value);
 }
 
 /// Расширение для списка валидаторов [List<ACValidation>].
 /// Позволяет применить несколько проверок к одному значению.
 extension ACValidationListExt<V, E> on List<ACValidation<V, E>> {
-
   /// Применяет все валидаций по очереди к [value].
   /// Если одна из валидаций возвращает ошибку, она сразу возвращается.
   E? validate(V? value) {
@@ -28,7 +27,6 @@ extension ACValidationListExt<V, E> on List<ACValidation<V, E>> {
 
     return result;
   }
-
 }
 
 /// Валидация на обязательное заполнение текстового поля
@@ -44,11 +42,11 @@ class ACRequiredValidation<T> extends ACValidation<T, Exception> {
     if (value is String && value.isEmpty) return const RequiredFieldException();
 
     // Дополнительно проверяем для Iterable
-    if (value is Iterable && value.isEmpty) return const RequiredFieldException();
+    if (value is Iterable && value.isEmpty)
+      return const RequiredFieldException();
 
     return null;
   }
-
 }
 
 /// Валидация на минимальную длину текста
@@ -61,10 +59,7 @@ class ACMinLengthValidation extends ACValidation<String, Exception> {
 
   @override
   Exception? validate(String? value) =>
-    (value ?? '').length < minLength ?
-      MinLengthException(minLength) :
-      null;
-
+      (value ?? '').length < minLength ? MinLengthException(minLength) : null;
 }
 
 /// Валидация на максимальную длину текста
@@ -77,10 +72,7 @@ class ACMaxLengthValidation extends ACValidation<String, Exception> {
 
   @override
   Exception? validate(String? value) =>
-    (value ?? '').length > maxLength ?
-      MaxLengthException(maxLength) :
-      null;
-
+      (value ?? '').length > maxLength ? MaxLengthException(maxLength) : null;
 }
 
 /// Базовая абстрактная валидация по регулярному выражению
@@ -93,10 +85,9 @@ abstract class ACRegExpValidation<E> extends ACValidation<String, E> {
 
   /// Ошибка, возвращаемая при несовпадении значения с [regExp].
   E get error;
-  
+
   @override
-  E? validate(String? value) =>
-    !regExp.hasMatch(value ?? '') ? error : null;
+  E? validate(String? value) => !regExp.hasMatch(value ?? '') ? error : null;
 }
 
 /// Валидация для email с использованием регулярного выражения
@@ -105,12 +96,12 @@ class ACEmailValidation extends ACRegExpValidation<Exception> {
   const ACEmailValidation();
 
   /// Регулярное выражение для проверки email.
-  static final emailValidRegExp = RegExp(r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$');
+  static final emailValidRegExp = RegExp(
+      r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$');
 
   @override
   RegExp get regExp => emailValidRegExp;
 
   @override
   Exception get error => const WrongEmailException();
-
 }

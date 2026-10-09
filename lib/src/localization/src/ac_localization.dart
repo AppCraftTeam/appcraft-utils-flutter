@@ -38,40 +38,33 @@ class ACLocalizationRu implements ACLocalization {
   const ACLocalizationRu();
 
   @override
-  String get wipException =>
-    'В разработке 👨‍💻';
+  String get wipException => 'В разработке 👨‍💻';
 
   @override
-  String get notFoundException =>
-    'Ресурс не найден';
+  String get notFoundException => 'Ресурс не найден';
 
   @override
-  String get requiredFieldException =>
-    'Обязательное поле';
+  String get requiredFieldException => 'Обязательное поле';
 
   @override
-  String get wrongPasswordException =>
-    'Некорректный пароль';
+  String get wrongPasswordException => 'Некорректный пароль';
 
   @override
-  String get wrongLoginException =>
-    'Некорректный логин';
+  String get wrongLoginException => 'Некорректный логин';
 
   @override
-  String get wrongEmailException =>
-    'Некорректный E-mail';
+  String get wrongEmailException => 'Некорректный E-mail';
 
   @override
-  String get unauthorizedException =>
-    'Требуется авторизация';
+  String get unauthorizedException => 'Требуется авторизация';
 
   @override
   String minLengthException(int minLength) =>
-    'Минимальная длина $minLength символов';
+      'Минимальная длина $minLength символов';
 
   @override
   String maxLengthException(int maxLength) =>
-    'Длина превышает $maxLength символов';
+      'Длина превышает $maxLength символов';
 }
 
 /// Английская реализация [ACLocalization].
@@ -80,39 +73,31 @@ class ACLocalizationEn implements ACLocalization {
   const ACLocalizationEn();
 
   @override
-  String get wipException =>
-    'In development 👨‍💻';
+  String get wipException => 'In development 👨‍💻';
 
   @override
-  String get notFoundException =>
-    'Resource not found';
+  String get notFoundException => 'Resource not found';
 
   @override
-  String get requiredFieldException =>
-    'Required field';
+  String get requiredFieldException => 'Required field';
 
   @override
-  String get wrongPasswordException =>
-    'Wrong password';
+  String get wrongPasswordException => 'Wrong password';
 
   @override
-  String get wrongLoginException =>
-    'Wrong login';
+  String get wrongLoginException => 'Wrong login';
 
   @override
-  String get wrongEmailException =>
-    'Wrong E-mail';
+  String get wrongEmailException => 'Wrong E-mail';
 
   @override
-  String get unauthorizedException =>
-    'Unauthorized';
+  String get unauthorizedException => 'Unauthorized';
 
   @override
   String minLengthException(int minLength) =>
-    'Minimum length $minLength characters';
+      'Minimum length $minLength characters';
 
   @override
   String maxLengthException(int maxLength) =>
-    'Length exceeds $maxLength characters';
-
+      'Length exceeds $maxLength characters';
 }
