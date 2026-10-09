@@ -47,11 +47,11 @@ void main() {
       expect(_errorOf(text.copyWith(value: 'abc')), isNull);
     });
 
-    // NOTE: possible bug, see report
-    test('returns RequiredFieldException for an empty value with minLength 0',
-        () {
-      expect(
-          _errorOf(const ACText(minLength: 0)), isA<RequiredFieldException>());
+    test('accepts an empty value when minLength is not positive', () {
+      for (final minLength in [0, -1]) {
+        expect(_errorOf(ACText(minLength: minLength)), isNull,
+            reason: 'minLength: $minLength');
+      }
     });
 
     test('copyWith without arguments keeps every field', () {
@@ -94,9 +94,27 @@ void main() {
       expect(copy.maxLength, isNull);
     });
 
-    // NOTE: possible bug, see report
-    test('is equal to a text that differs only in limits', () {
-      expect(const ACText(), const ACText(minLength: 1, maxLength: 5));
+    test('is not equal to a text that differs only in limits', () {
+      const text = ACText(minLength: 1, maxLength: 5);
+      const others = {
+        'no limits': ACText(),
+        'minLength': ACText(minLength: 2, maxLength: 5),
+        'maxLength': ACText(minLength: 1, maxLength: 6),
+      };
+
+      for (final MapEntry(key: difference, value: other) in others.entries) {
+        expect(text, isNot(other), reason: difference);
+      }
+    });
+
+    test('is equal with the same hashCode when fields match', () {
+      const text =
+          ACText(value: 'abc', isPure: false, minLength: 1, maxLength: 5);
+      const other =
+          ACText(value: 'abc', isPure: false, minLength: 1, maxLength: 5);
+
+      expect(text, other);
+      expect(text.hashCode, other.hashCode);
     });
   });
 }

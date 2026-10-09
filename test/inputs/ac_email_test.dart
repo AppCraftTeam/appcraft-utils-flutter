@@ -31,12 +31,11 @@ void main() {
       expect(email.displayError, isA<RequiredFieldException>());
     });
 
-    // NOTE: possible bug, see report
-    test('is not valid for an empty optional email', () {
+    test('is valid for an empty optional email', () {
       const email = ACEmail(isPure: false);
 
-      expect(email.isValid, isFalse);
-      expect(email.displayError, isA<WrongEmailException>());
+      expect(email.isValid, isTrue);
+      expect(email.displayError, isNull);
     });
 
     test('copyWith without arguments keeps every field', () {
@@ -57,9 +56,16 @@ void main() {
       expect(email.copyWith(isRequired: true).isRequired, isTrue);
     });
 
-    // NOTE: possible bug, see report
-    test('is equal to an email that differs only in isRequired', () {
-      expect(const ACEmail(), const ACEmail(isRequired: true));
+    test('is not equal to an email that differs only in isRequired', () {
+      expect(const ACEmail(), isNot(const ACEmail(isRequired: true)));
+    });
+
+    test('is equal with the same hashCode when fields match', () {
+      const email = ACEmail(value: 'a@b.cd', isPure: false, isRequired: true);
+      const other = ACEmail(value: 'a@b.cd', isPure: false, isRequired: true);
+
+      expect(email, other);
+      expect(email.hashCode, other.hashCode);
     });
   });
 }

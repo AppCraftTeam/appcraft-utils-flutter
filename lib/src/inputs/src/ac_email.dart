@@ -20,9 +20,14 @@ class ACEmail extends ACInput<String, Exception> {
         // Если поле обязательное — проверка на заполненность
         if (isRequired) const ACRequiredValidation(),
 
-        // Проверка корректности email через регулярное выражение
-        const ACEmailValidation()
+        // Проверка корректности email через регулярное выражение —
+        // только для непустого значения: пустое необязательное поле валидно
+        if (value != null && value.isNotEmpty) const ACEmailValidation()
       ];
+
+  /// Свойства для сравнения: [value], [isPure] и [isRequired].
+  @override
+  List<Object?> get props => [...super.props, isRequired];
 
   /// Возвращает новый экземпляр с переопределёнными полями.
   ACEmail copyWith({String? value, bool? isPure, bool? isRequired}) => ACEmail(
