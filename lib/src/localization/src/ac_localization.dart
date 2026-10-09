@@ -1,40 +1,41 @@
-/// Абстрактный класс для локализации сообщений приложения.
-/// Определяет набор обязательных сообщений и методов для конкретной локали.
+/// Abstract class for localizing application messages.
+///
+/// Defines the set of required messages and methods for a specific locale.
 abstract class ACLocalization {
-  /// Создаёт экземпляр локализации.
+  /// Creates a localization instance.
   const ACLocalization();
 
-  /// Сообщение об ошибке `WipException`.
+  /// The `WipException` error message.
   String get wipException;
 
-  /// Сообщение об ошибке `NotFoundException`.
+  /// The `NotFoundException` error message.
   String get notFoundException;
 
-  /// Сообщение об ошибке `RequiredFieldException`.
+  /// The `RequiredFieldException` error message.
   String get requiredFieldException;
 
-  /// Сообщение об ошибке `WrongPasswordException`.
+  /// The `WrongPasswordException` error message.
   String get wrongPasswordException;
 
-  /// Сообщение об ошибке `WrongLoginException`.
+  /// The `WrongLoginException` error message.
   String get wrongLoginException;
 
-  /// Сообщение об ошибке `WrongEmailException`.
+  /// The `WrongEmailException` error message.
   String get wrongEmailException;
 
-  /// Сообщение об ошибке `UnauthorizedException`.
+  /// The `UnauthorizedException` error message.
   String get unauthorizedException;
 
-  /// Сообщение об ошибке `MinLengthException` для указанного [minLength].
+  /// Returns the `MinLengthException` error message for the given [minLength].
   String minLengthException(int minLength);
 
-  /// Сообщение об ошибке `MaxLengthException` для указанного [maxLength].
+  /// Returns the `MaxLengthException` error message for the given [maxLength].
   String maxLengthException(int maxLength);
 }
 
-/// Русская реализация [ACLocalization].
+/// Russian implementation of [ACLocalization].
 class ACLocalizationRu implements ACLocalization {
-  /// Создаёт русскую локализацию.
+  /// Creates the Russian localization.
   const ACLocalizationRu();
 
   @override
@@ -67,9 +68,9 @@ class ACLocalizationRu implements ACLocalization {
       'Длина превышает $maxLength символов';
 }
 
-/// Английская реализация [ACLocalization].
+/// English implementation of [ACLocalization].
 class ACLocalizationEn implements ACLocalization {
-  /// Создаёт английскую локализацию.
+  /// Creates the English localization.
   const ACLocalizationEn();
 
   @override

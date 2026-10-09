@@ -1,25 +1,27 @@
 import '../../../appcraft_utils_flutter.dart';
 
-/// Менеджер локализации.
+/// Localization manager.
 class ACLocalizationManager {
-  /// Приватный конструктор, чтобы предотвратить создание внешних экземпляров
+  /// Private constructor that prevents creating external instances.
   ACLocalizationManager._();
 
-  /// Статический единственный экземпляр класса
+  /// The static single instance of the class.
   static final instance = ACLocalizationManager._();
 
-  /// Словарь локализаций, где ключ — код языка, значение — объект локализации
+  /// Map of localizations, where the key is a language code and the value is
+  /// a localization object.
   final Map<String, ACLocalization> localizations = {
     'ru': const ACLocalizationRu(),
     'en': const ACLocalizationEn()
   };
 
-  /// Текущая локаль приложения (по умолчанию 'ru')
+  /// The current application locale ('ru' by default).
   String currentLocale = 'ru';
 
-  /// Метод получения объекта локализации.
-  /// Если [localeName] указан — возвращается локализация для него,
-  /// иначе — текущая локаль. Если локаль не найдена — по умолчанию русская.
+  /// Returns the localization object.
+  ///
+  /// If [localeName] is given, returns the localization for it, otherwise for
+  /// the current locale. If the locale is not found, falls back to Russian.
   ACLocalization localization([String? localeName]) =>
       localizations[localeName ?? currentLocale] ?? const ACLocalizationRu();
 }

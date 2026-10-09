@@ -1,7 +1,7 @@
-/// Расширение для безопасного поиска значения enum по имени.
+/// Extension for safely looking up an enum value by name.
 extension ACEnumByNameOrNull<T extends Enum> on Iterable<T> {
-  /// Возвращает значение enum по [name] или `null`, если совпадение не найдено
-  /// либо [name] равен `null`.
+  /// Returns the enum value for [name], or `null` if there is no match
+  /// or [name] is `null`.
   T? byNameOrNull(String? name) {
     try {
       return byName(name ?? '');
@@ -11,17 +11,22 @@ extension ACEnumByNameOrNull<T extends Enum> on Iterable<T> {
   }
 }
 
-/// Расширение, добавляющее enum-значениям операторы сравнения по [Enum.index].
+/// Extension that adds [Enum.index]-based comparison operators to enum
+/// values.
 extension ACEnumComparisonOperators<T extends Enum> on T {
-  /// Возвращает `true`, если индекс текущего значения меньше индекса [other].
+  /// Returns `true` if the index of this value is less than the index of
+  /// [other].
   bool operator <(T other) => index < other.index;
 
-  /// Возвращает `true`, если индекс текущего значения меньше или равен индексу [other].
+  /// Returns `true` if the index of this value is less than or equal to the
+  /// index of [other].
   bool operator <=(T other) => index <= other.index;
 
-  /// Возвращает `true`, если индекс текущего значения больше индекса [other].
+  /// Returns `true` if the index of this value is greater than the index of
+  /// [other].
   bool operator >(T other) => index > other.index;
 
-  /// Возвращает `true`, если индекс текущего значения больше или равен индексу [other].
+  /// Returns `true` if the index of this value is greater than or equal to the
+  /// index of [other].
   bool operator >=(T other) => index >= other.index;
 }
