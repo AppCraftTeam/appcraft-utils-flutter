@@ -12,7 +12,7 @@ abstract class ACEntityMapper<Input, Output> {
   /// Преобразует список [inputs], отбрасывая элементы, для которых
   /// [map] вернул `null`. Возвращает пустой список, если [inputs] равен `null`.
   List<Output> mapList(List<Input?>? inputs) =>
-    inputs?.map(map).whereType<Output>().toList() ?? [];
+      inputs?.map(map).whereType<Output>().toList() ?? [];
 
   /// Преобразует [input] в [Output]. Бросает [Exception], если результат `null`.
   Output mapNotNull(Input? input) {

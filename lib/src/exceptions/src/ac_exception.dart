@@ -23,7 +23,7 @@ class WipException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).wipException;
+      _localization(localeName).wipException;
 }
 
 /// Исключение, когда какой-либо ресурс или элемент не найден
@@ -33,7 +33,7 @@ class NotFoundException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).notFoundException;
+      _localization(localeName).notFoundException;
 }
 
 /// Исключение, когда обязательное поле не заполнено
@@ -43,37 +43,33 @@ class RequiredFieldException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).requiredFieldException;
+      _localization(localeName).requiredFieldException;
 }
 
 /// Исключение, когда длина введенного значения меньше минимальной
 class MinLengthException extends ACException {
   /// Создаёт исключение с указанным минимально допустимым значением [minLength].
-  const MinLengthException(
-    this.minLength
-  );
+  const MinLengthException(this.minLength);
 
   /// Минимально допустимая длина значения.
   final int minLength;
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).minLengthException(minLength);
+      _localization(localeName).minLengthException(minLength);
 }
 
 /// Исключение, когда длина введенного значения превышает максимальную
 class MaxLengthException extends ACException {
   /// Создаёт исключение с указанным максимально допустимым значением [maxLength].
-  const MaxLengthException(
-    this.maxLength
-  );
+  const MaxLengthException(this.maxLength);
 
   /// Максимально допустимая длина значения.
   final int maxLength;
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).maxLengthException(maxLength);
+      _localization(localeName).maxLengthException(maxLength);
 }
 
 /// Исключение для неверного пароля
@@ -83,7 +79,7 @@ class WrongPasswordException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).wrongPasswordException;
+      _localization(localeName).wrongPasswordException;
 }
 
 /// Исключение для неверного логина
@@ -93,7 +89,7 @@ final class WrongLoginException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).wrongLoginException;
+      _localization(localeName).wrongLoginException;
 }
 
 /// Исключение для неверного email
@@ -103,7 +99,7 @@ final class WrongEmailException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).wrongEmailException;
+      _localization(localeName).wrongEmailException;
 }
 
 /// Исключение для неавторизованных действий
@@ -113,5 +109,5 @@ final class UnauthorizedException extends ACException {
 
   @override
   String localizedMessage([String? localeName]) =>
-    _localization(localeName).unauthorizedException;
+      _localization(localeName).unauthorizedException;
 }

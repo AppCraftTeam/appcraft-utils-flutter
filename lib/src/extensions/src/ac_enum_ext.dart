@@ -1,6 +1,5 @@
 /// Расширение для безопасного поиска значения enum по имени.
 extension ACEnumByNameOrNull<T extends Enum> on Iterable<T> {
-
   /// Возвращает значение enum по [name] или `null`, если совпадение не найдено
   /// либо [name] равен `null`.
   T? byNameOrNull(String? name) {
@@ -10,7 +9,6 @@ extension ACEnumByNameOrNull<T extends Enum> on Iterable<T> {
       return null;
     }
   }
-
 }
 
 /// Расширение, добавляющее enum-значениям операторы сравнения по [Enum.index].

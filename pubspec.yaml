@@ -1,6 +1,6 @@
 name: appcraft_utils_flutter
 description: Lightweight Dart utilities and Flutter-friendly extensions for forms, validations, mappers, models, exceptions, notifiers and localization.
-version: 0.1.1
+version: 0.2.0
 repository: https://github.com/AppCraftTeam/appcraft-utils-flutter
 homepage: https://github.com/AppCraftTeam/appcraft-utils-flutter
 issue_tracker: https://github.com/AppCraftTeam/appcraft-utils-flutter/issues
@@ -16,7 +16,7 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  equatable: ^2.0.5
+  equatable: ^2.1.0
 
 dev_dependencies:
   lints: ^5.0.0
