@@ -2,23 +2,25 @@ import '../../../appcraft_utils_flutter.dart';
 
 final _localization = ACLocalizationManager.instance.localization;
 
-/// Абстрактный класс для пользовательских исключений в приложении.
-/// Наследуется от стандартного Exception.
+/// Abstract base class for custom application exceptions.
+///
+/// Inherits from the standard [Exception].
 abstract class ACException implements Exception {
-  /// Создаёт экземпляр исключения.
+  /// Creates an exception instance.
   const ACException();
 
-  /// Метод возвращает локализованное сообщение об ошибке.
-  /// [localeName] — опциональный параметр для указания конкретной локали.
+  /// Returns the localized error message.
+  ///
+  /// [localeName] is an optional parameter that specifies a particular locale.
   String localizedMessage([String? localeName]);
 
   @override
   String toString() => localizedMessage();
 }
 
-/// Исключение для функционала, который еще не реализован (Work In Progress)
+/// Exception for functionality that is not implemented yet (Work In Progress).
 class WipException extends ACException {
-  /// Создаёт исключение для нереализованного функционала.
+  /// Creates an exception for not yet implemented functionality.
   const WipException();
 
   @override
@@ -26,9 +28,9 @@ class WipException extends ACException {
       _localization(localeName).wipException;
 }
 
-/// Исключение, когда какой-либо ресурс или элемент не найден
+/// Exception thrown when a resource or an item is not found.
 class NotFoundException extends ACException {
-  /// Создаёт исключение «ресурс не найден».
+  /// Creates a "resource not found" exception.
   const NotFoundException();
 
   @override
@@ -36,9 +38,9 @@ class NotFoundException extends ACException {
       _localization(localeName).notFoundException;
 }
 
-/// Исключение, когда обязательное поле не заполнено
+/// Exception thrown when a required field is not filled in.
 class RequiredFieldException extends ACException {
-  /// Создаёт исключение «обязательное поле не заполнено».
+  /// Creates a "required field is not filled in" exception.
   const RequiredFieldException();
 
   @override
@@ -46,12 +48,12 @@ class RequiredFieldException extends ACException {
       _localization(localeName).requiredFieldException;
 }
 
-/// Исключение, когда длина введенного значения меньше минимальной
+/// Exception thrown when the entered value is shorter than the minimum length.
 class MinLengthException extends ACException {
-  /// Создаёт исключение с указанным минимально допустимым значением [minLength].
+  /// Creates an exception with the given minimum allowed value [minLength].
   const MinLengthException(this.minLength);
 
-  /// Минимально допустимая длина значения.
+  /// The minimum allowed length of the value.
   final int minLength;
 
   @override
@@ -59,12 +61,12 @@ class MinLengthException extends ACException {
       _localization(localeName).minLengthException(minLength);
 }
 
-/// Исключение, когда длина введенного значения превышает максимальную
+/// Exception thrown when the entered value exceeds the maximum length.
 class MaxLengthException extends ACException {
-  /// Создаёт исключение с указанным максимально допустимым значением [maxLength].
+  /// Creates an exception with the given maximum allowed value [maxLength].
   const MaxLengthException(this.maxLength);
 
-  /// Максимально допустимая длина значения.
+  /// The maximum allowed length of the value.
   final int maxLength;
 
   @override
@@ -72,9 +74,9 @@ class MaxLengthException extends ACException {
       _localization(localeName).maxLengthException(maxLength);
 }
 
-/// Исключение для неверного пароля
+/// Exception for a wrong password.
 class WrongPasswordException extends ACException {
-  /// Создаёт исключение «неверный пароль».
+  /// Creates a "wrong password" exception.
   const WrongPasswordException();
 
   @override
@@ -82,9 +84,9 @@ class WrongPasswordException extends ACException {
       _localization(localeName).wrongPasswordException;
 }
 
-/// Исключение для неверного логина
+/// Exception for a wrong login.
 final class WrongLoginException extends ACException {
-  /// Создаёт исключение «неверный логин».
+  /// Creates a "wrong login" exception.
   const WrongLoginException();
 
   @override
@@ -92,9 +94,9 @@ final class WrongLoginException extends ACException {
       _localization(localeName).wrongLoginException;
 }
 
-/// Исключение для неверного email
+/// Exception for a wrong email.
 final class WrongEmailException extends ACException {
-  /// Создаёт исключение «неверный email».
+  /// Creates a "wrong email" exception.
   const WrongEmailException();
 
   @override
@@ -102,9 +104,9 @@ final class WrongEmailException extends ACException {
       _localization(localeName).wrongEmailException;
 }
 
-/// Исключение для неавторизованных действий
+/// Exception for unauthorized actions.
 final class UnauthorizedException extends ACException {
-  /// Создаёт исключение «неавторизованное действие».
+  /// Creates an "unauthorized action" exception.
   const UnauthorizedException();
 
   @override

@@ -1,22 +1,27 @@
 import '../../exceptions/src/ac_exception.dart';
 
-/// Абстрактный класс валидации.
-/// [V] — тип значения, которое проверяется.
-/// [E] — тип ошибки, которая возвращается при нарушении валидации.
+/// Abstract validation class.
+///
+/// [V] is the type of the value being validated.
+/// [E] is the type of the error returned when validation fails.
 abstract class ACValidation<V, E> {
-  /// Создаёт валидацию.
+  /// Creates a validation.
   const ACValidation();
 
-  /// Метод для проверки значения.
-  /// Возвращает объект ошибки [E] при некорректном значении или null, если все ок.
+  /// Validates the value.
+  ///
+  /// Returns an error object [E] for an invalid value, or null if everything
+  /// is fine.
   E? validate(V? value);
 }
 
-/// Расширение для списка валидаторов [List<ACValidation>].
-/// Позволяет применить несколько проверок к одному значению.
+/// Extension for a list of validators [List<ACValidation>].
+///
+/// Allows applying several checks to a single value.
 extension ACValidationListExt<V, E> on List<ACValidation<V, E>> {
-  /// Применяет все валидаций по очереди к [value].
-  /// Если одна из валидаций возвращает ошибку, она сразу возвращается.
+  /// Applies all validations to [value] one by one.
+  ///
+  /// If one of the validations returns an error, it is returned immediately.
   E? validate(V? value) {
     E? result;
 
@@ -29,19 +34,19 @@ extension ACValidationListExt<V, E> on List<ACValidation<V, E>> {
   }
 }
 
-/// Валидация на обязательное заполнение текстового поля
+/// Validation that a text field is filled in.
 class ACRequiredValidation<T> extends ACValidation<T, Exception> {
-  /// Создаёт валидацию обязательного значения.
+  /// Creates a required value validation.
   const ACRequiredValidation();
 
   @override
   Exception? validate(T? value) {
     if (value == null) return const RequiredFieldException();
 
-    // Дополнительно проверяем для String
+    // Additional check for String
     if (value is String && value.isEmpty) return const RequiredFieldException();
 
-    // Дополнительно проверяем для Iterable
+    // Additional check for Iterable
     if (value is Iterable && value.isEmpty)
       return const RequiredFieldException();
 
@@ -49,12 +54,12 @@ class ACRequiredValidation<T> extends ACValidation<T, Exception> {
   }
 }
 
-/// Валидация на минимальную длину текста
+/// Validation of the minimum text length.
 class ACMinLengthValidation extends ACValidation<String, Exception> {
-  /// Создаёт валидацию минимальной длины [minLength].
+  /// Creates a minimum length validation for [minLength].
   const ACMinLengthValidation(this.minLength);
 
-  /// Минимально допустимая длина значения.
+  /// The minimum allowed length of the value.
   final int minLength;
 
   @override
@@ -62,12 +67,12 @@ class ACMinLengthValidation extends ACValidation<String, Exception> {
       (value ?? '').length < minLength ? MinLengthException(minLength) : null;
 }
 
-/// Валидация на максимальную длину текста
+/// Validation of the maximum text length.
 class ACMaxLengthValidation extends ACValidation<String, Exception> {
-  /// Создаёт валидацию максимальной длины [maxLength].
+  /// Creates a maximum length validation for [maxLength].
   const ACMaxLengthValidation(this.maxLength);
 
-  /// Максимально допустимая длина значения.
+  /// The maximum allowed length of the value.
   final int maxLength;
 
   @override
@@ -75,27 +80,27 @@ class ACMaxLengthValidation extends ACValidation<String, Exception> {
       (value ?? '').length > maxLength ? MaxLengthException(maxLength) : null;
 }
 
-/// Базовая абстрактная валидация по регулярному выражению
+/// Base abstract regular expression validation.
 abstract class ACRegExpValidation<E> extends ACValidation<String, E> {
-  /// Создаёт валидацию по регулярному выражению.
+  /// Creates a regular expression validation.
   const ACRegExpValidation();
 
-  /// Регулярное выражение, которому должно удовлетворять значение.
+  /// The regular expression the value must match.
   RegExp get regExp;
 
-  /// Ошибка, возвращаемая при несовпадении значения с [regExp].
+  /// The error returned when the value does not match [regExp].
   E get error;
 
   @override
   E? validate(String? value) => !regExp.hasMatch(value ?? '') ? error : null;
 }
 
-/// Валидация для email с использованием регулярного выражения
+/// Email validation using a regular expression.
 class ACEmailValidation extends ACRegExpValidation<Exception> {
-  /// Создаёт валидацию формата email.
+  /// Creates an email format validation.
   const ACEmailValidation();
 
-  /// Регулярное выражение для проверки email.
+  /// The regular expression for validating an email.
   static final emailValidRegExp = RegExp(
       r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$');
 

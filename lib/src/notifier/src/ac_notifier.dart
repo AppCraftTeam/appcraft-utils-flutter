@@ -1,37 +1,39 @@
 import 'dart:async';
 
-/// Базовый нотификатор событий типа [T].
+/// Base notifier of events of type [T].
 ///
-/// Оборачивает [StreamController] в режиме broadcast и предоставляет
-/// удобные методы для подписки и отправки событий.
+/// Wraps a broadcast [StreamController] and provides convenient methods
+/// for subscribing to and sending events.
 abstract class ACNotifier<T> {
-  /// Создаёт нотификатор.
+  /// Creates a notifier.
   ///
-  /// Если [resendLastEvent] равен `true`, то при отсутствии подписчиков
-  /// последнее событие будет сохранено и переотправлено первому
-  /// появившемуся подписчику.
+  /// If [resendLastEvent] is `true`, then while there are no subscribers
+  /// the last event is stored and resent to the first subscriber
+  /// that appears.
   ACNotifier({this.resendLastEvent = false});
 
-  /// Если `true`,
-  /// то при попытке отправить событие и при отстуствии подсписчиков, событие будет сохраненою.
-  /// А при подписке будет отправлено последнее сохранённое событие.
+  /// Whether the last event is stored and resent.
+  ///
+  /// If `true`, an event sent while there are no subscribers is stored,
+  /// and the last stored event is sent upon subscription.
   final bool resendLastEvent;
   T? _lastEvent;
 
   final _streamController = StreamController<T>.broadcast();
 
-  /// Подписывается на события и вызывает [onData] для каждого события.
+  /// Subscribes to events and calls [onData] for each event.
   ///
-  /// Возвращает [ACNotifierSub], управляющий жизненным циклом подписки.
+  /// Returns an [ACNotifierSub] that manages the subscription lifecycle.
   ACNotifierSub<T> listen(void onData(T event)?) {
     final subscription = _streamController.stream.listen(onData);
     _trySendLastEvent();
     return subscription;
   }
 
-  /// Подписывается на события и вызывает [onData] без передачи значения.
+  /// Subscribes to events and calls [onData] without passing the value.
   ///
-  /// Удобно, когда содержимое события не важно — важен только факт его получения.
+  /// Handy when the event content does not matter — only the fact that it
+  /// was received.
   ACNotifierSub<T> listenAny(void onData()?) {
     final subscription = _streamController.stream.listen((_) {
       onData?.call();
@@ -40,11 +42,11 @@ abstract class ACNotifier<T> {
     return subscription;
   }
 
-  /// Отправляет [event] подписчикам.
+  /// Sends [event] to the subscribers.
   ///
-  /// Если подписчиков нет и [resendLastEvent] равен `true`,
-  /// событие сохраняется и будет отправлено первому подписчику.
-  /// После [dispose] событие отбрасывается.
+  /// If there are no subscribers and [resendLastEvent] is `true`,
+  /// the event is stored and will be sent to the first subscriber.
+  /// After [dispose] the event is discarded.
   void send(T event) {
     if (_streamController.isClosed) return;
 
@@ -64,15 +66,16 @@ abstract class ACNotifier<T> {
     _lastEvent = null;
   }
 
-  /// Закрывает внутренний поток и освобождает ресурсы нотификатора.
+  /// Closes the internal stream and releases the notifier resources.
   ///
-  /// Сохранённое событие сбрасывается. После вызова [send] ничего не делает,
-  /// а новые подписки сразу завершаются без событий. Повторный вызов безопасен.
+  /// The stored event is cleared. After the call [send] does nothing,
+  /// and new subscriptions complete immediately without events. Calling it
+  /// again is safe.
   Future<void> dispose() async {
     _lastEvent = null;
     await _streamController.close();
   }
 }
 
-/// Подписка на события [ACNotifier].
+/// Subscription to [ACNotifier] events.
 typedef ACNotifierSub<T> = StreamSubscription<T>;

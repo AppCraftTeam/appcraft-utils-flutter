@@ -1,20 +1,24 @@
-/// Базовый абстрактный маппер сущностей.
+/// Base abstract entity mapper.
 ///
-/// Преобразует значение типа [Input] в значение типа [Output].
+/// Converts a value of type [Input] into a value of type [Output].
 abstract class ACEntityMapper<Input, Output> {
-  /// Создаёт экземпляр маппера.
+  /// Creates a mapper instance.
   const ACEntityMapper();
 
-  /// Преобразует [input] в [Output] либо возвращает `null`,
-  /// если преобразование невозможно.
+  /// Converts [input] into [Output], or returns `null`
+  /// if the conversion is not possible.
   Output? map(Input? input);
 
-  /// Преобразует список [inputs], отбрасывая элементы, для которых
-  /// [map] вернул `null`. Возвращает пустой список, если [inputs] равен `null`.
+  /// Converts the list [inputs], dropping the elements for which
+  /// [map] returned `null`.
+  ///
+  /// Returns an empty list if [inputs] is `null`.
   List<Output> mapList(List<Input?>? inputs) =>
       inputs?.map(map).whereType<Output>().toList() ?? [];
 
-  /// Преобразует [input] в [Output]. Бросает [Exception], если результат `null`.
+  /// Converts [input] into [Output].
+  ///
+  /// Throws an [Exception] if the result is `null`.
   Output mapNotNull(Input? input) {
     final output = map(input);
 

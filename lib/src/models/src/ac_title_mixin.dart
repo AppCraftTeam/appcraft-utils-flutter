@@ -1,24 +1,27 @@
-/// Миксин для объектов, которые имеют заголовок [title].
+/// Mixin for objects that have a title [title].
 mixin ACTitleMixin {
-  /// Заголовок объекта
+  /// The title of the object.
   String get title;
 }
 
-/// Класс-обертка для хранения заголовка.
-/// Использует миксин [ACTitleMixin] для совместимости с расширениями.
+/// Wrapper class for storing a title.
+///
+/// Uses the [ACTitleMixin] mixin for compatibility with the extensions.
 class ACTitle with ACTitleMixin {
-  /// Конструктор принимает обязательный заголовок [title]
+  /// Creates a wrapper with the required title [title].
   const ACTitle({required this.title});
 
-  /// Поле заголовка
+  /// The title field.
   final String title;
 }
 
-/// Расширение для списка объектов с миксином [ACTitleMixin].
-/// Позволяет выполнять операции, связанные с заголовком.
+/// Extension for a list of objects with the [ACTitleMixin] mixin.
+///
+/// Allows performing title-related operations.
 extension TitleMixinListExt<T extends ACTitleMixin> on List<T> {
-  /// Возвращает новый список, отсортированный по заголовку title в алфавитном порядке.
-  /// Исходный список при этом не изменяется.
+  /// Returns a new list sorted alphabetically by title.
+  ///
+  /// The original list is not modified.
   List<T> sortedByTitle() =>
       List.of(this)..sort((a, b) => a.title.compareTo(b.title));
 }

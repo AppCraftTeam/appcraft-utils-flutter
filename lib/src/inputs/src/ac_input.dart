@@ -2,35 +2,41 @@ import 'package:equatable/equatable.dart';
 
 import '../../../appcraft_utils_flutter.dart';
 
-/// Абстрактный класс для обработки ввода данных в форме
-/// [V] — тип значения поля
-/// [E] — тип ошибки валидации
+/// Abstract class for handling form input.
+///
+/// [V] is the type of the field value.
+/// [E] is the type of the validation error.
 abstract class ACInput<V, E> with ACInputMixin, Equatable {
-  /// Конструктор принимает:
-  /// [value] — текущее значение поля
-  /// [isPure] — флаг, указывающий, было ли значение изменено пользователем
+  /// Creates an input.
+  ///
+  /// [value] is the current field value.
+  /// [isPure] is a flag indicating whether the value has been changed by the
+  /// user.
   const ACInput({required this.value, this.isPure = true});
 
-  /// Текущее значение поля
+  /// The current field value.
   final V value;
 
-  /// Флаг, указывающий, было ли значение изменено пользователем
-  /// true — значение не менялось,
-  /// false — изменялось
+  /// Whether the value has not been changed by the user.
+  ///
+  /// `true` — the value has not been changed,
+  /// `false` — it has been changed.
   final bool isPure;
 
-  /// Проверка валидности поля: true, если ошибок нет
+  /// Whether the field is valid: true if there are no errors.
   bool get isValid => validator(value) == null;
 
-  /// Отображаемая ошибка:
-  /// Если значение не менялось (isPure == true), ошибки не показываются
+  /// The error to display.
+  ///
+  /// If the value has not been changed (isPure == true), no errors are shown.
   E? get displayError => isPure ? null : validator(value);
 
-  /// Проверка значения
+  /// Validates the value.
   E? validator(V? value) => validations(value).validate(value);
 
-  /// Список валидаций для поля.
-  /// По умолчанию пустой, переопределяется в конкретных имплементациях.
+  /// The list of validations for the field.
+  ///
+  /// Empty by default; overridden in concrete implementations.
   List<ACValidation<V, E>> validations(V? value) => [];
 
   @override

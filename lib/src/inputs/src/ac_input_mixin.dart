@@ -1,19 +1,25 @@
-/// Миксин для ввода данных в форму.
-/// Добавляет свойства для проверки валидности поля.
+/// Mixin for form input.
+///
+/// Adds properties for checking whether a field is valid.
 mixin ACInputMixin {
-  /// Проверка валидности поля.
-  /// Должна быть реализована в классе, который использует миксин.
+  /// Whether the field is valid.
+  ///
+  /// Must be implemented by the class that uses the mixin.
   bool get isValid;
 
-  /// Обратная проверка: true, если поле невалидное
+  /// Whether the field is invalid.
+  ///
+  /// The inverse of [isValid].
   bool get isNotValid => !isValid;
 }
 
-/// Расширение для списка объектов с миксином [ACInputMixin]
+/// Extension for a list of objects with the [ACInputMixin] mixin.
 extension ACInputMixinListExt on List<ACInputMixin> {
-  /// Проверка, что все поля в списке валидны
+  /// Whether all fields in the list are valid.
   bool get isValid => every((e) => e.isValid);
 
-  /// Обратная проверка: true, если хотя бы одно поле невалидное
+  /// Whether at least one field is invalid.
+  ///
+  /// The inverse of [isValid].
   bool get isNotValid => !isValid;
 }

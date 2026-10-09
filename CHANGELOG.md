@@ -1,5 +1,11 @@
 # appcraft_utils_flutter
 
+## 0.2.1
+
+### Changed
+
+- Dartdoc and code comments are translated to English. No API or behavior changes.
+
 ## 0.2.0
 
 ### Breaking Changes

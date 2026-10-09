@@ -1,52 +1,56 @@
 import '../../models/src/wrapped_value.dart';
 import '../inputs.dart';
 
-/// Класс для текстового поля формы.
-/// Наследуется от [ACInput], где:
-/// - `String` — тип значения поля
-/// - `Exception` — тип ошибки валидации
+/// Class for a text form field.
+///
+/// Extends [ACInput], where:
+/// - `String` is the type of the field value
+/// - `Exception` is the type of the validation error
 class ACText extends ACInput<String, Exception> {
-  /// Конструктор принимает:
-  /// - [value] — текущее значение текста (по умолчанию пустая строка)
-  /// - [isPure] — флаг, указывающий, было ли значение изменено пользователем
-  /// - [minLength] — минимальная допустимая длина текста
-  /// - [maxLength] — максимальная допустимая длина текста
+  /// Creates a text field.
+  ///
+  /// - [value] is the current text value (an empty string by default)
+  /// - [isPure] is a flag indicating whether the value has been changed by
+  ///   the user
+  /// - [minLength] is the minimum allowed text length
+  /// - [maxLength] is the maximum allowed text length
   const ACText(
       {super.value = '', super.isPure, this.minLength, this.maxLength});
 
-  /// Минимальная длина текста (необязательный параметр)
+  /// The minimum text length (optional).
   final int? minLength;
 
-  /// Максимальная длина текста (необязательный параметр)
+  /// The maximum text length (optional).
   final int? maxLength;
 
-  /// Переопределение метода [validations], который возвращает список валидаторов
-  /// для проверки текста на длину и обязательность.
+  /// Overrides [validations] and returns the list of validators that check
+  /// that the text is filled in when required and meets the length limits.
   @override
   List<ACValidation<String, Exception>> validations(String? value) {
     final minLength = this.minLength;
     final maxLength = this.maxLength;
 
     return [
-      // Если минимальная длина задана и больше нуля, добавляем проверки:
-      // 1. Обязательность заполнения
-      // 2. Проверка минимальной длины
-      // При minLength <= 0 поле необязательное, пустое значение валидно
+      // If the minimum length is set and greater than zero, add the checks:
+      // 1. Required-field check
+      // 2. Minimum length check
+      // With minLength <= 0 the field is optional and an empty value is valid
       if (minLength != null && minLength > 0) ...[
         const ACRequiredValidation(),
         ACMinLengthValidation(minLength)
       ],
 
-      // Если задана максимальная длина, добавляем проверку
+      // If the maximum length is set, add the check
       if (maxLength != null) ACMaxLengthValidation(maxLength)
     ];
   }
 
-  /// Свойства для сравнения: [value], [isPure], [minLength] и [maxLength].
+  /// Properties used for comparison: [value], [isPure], [minLength] and
+  /// [maxLength].
   @override
   List<Object?> get props => [...super.props, minLength, maxLength];
 
-  /// Возвращает новый экземпляр с переопределёнными полями.
+  /// Returns a new instance with the given fields overridden.
   ACText copyWith(
           {String? value,
           bool? isPure,
