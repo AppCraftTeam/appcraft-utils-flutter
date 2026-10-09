@@ -5,7 +5,7 @@ import '../../../appcraft_utils_flutter.dart';
 /// Абстрактный класс для обработки ввода данных в форме
 /// [V] — тип значения поля
 /// [E] — тип ошибки валидации
-abstract class ACInput<V, E> with ACInputMixin, EquatableMixin {
+abstract class ACInput<V, E> with ACInputMixin, Equatable {
   /// Конструктор принимает:
   /// [value] — текущее значение поля
   /// [isPure] — флаг, указывающий, было ли значение изменено пользователем
